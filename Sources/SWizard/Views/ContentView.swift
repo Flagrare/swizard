@@ -57,9 +57,9 @@ struct ContentView: View {
                 .foregroundStyle(.blue)
 
             VStack(alignment: .leading, spacing: 4) {
-                Text("First launch tip")
+                Text("Quick setup tip")
                     .font(.subheadline.weight(.semibold))
-                Text("If macOS blocks SWizard after download, run Install-SWizard.command from the release zip or use: xattr -dr com.apple.quarantine /Applications/SWizard.app")
+                Text("On your Switch, open DBI and select \"Run DBI backend\" before connecting USB. SWizard uses DBI backend mode, not MTP responder.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
