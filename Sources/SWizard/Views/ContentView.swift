@@ -68,7 +68,7 @@ struct ContentView: View {
 
             if !appState.coordinator.progress.files.isEmpty {
                 Button("Clear Queue") {
-                    // TODO: implement clear
+                    appState.coordinator.reset()
                 }
                 .buttonStyle(.plain)
                 .foregroundStyle(.secondary)

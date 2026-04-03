@@ -3,7 +3,7 @@ import XCTest
 
 final class FileRangeCommandHandlerTests: XCTestCase {
 
-    func testFileRangeCommandSendsRequestedChunk() async throws {
+    func testFileRangeCommandFollowsCorrectProtocolSequence() async throws {
         // Arrange: file with known content
         let transport = MockTransport()
         let fileServer = MockFileServer()
@@ -15,17 +15,17 @@ final class FileRangeCommandHandlerTests: XCTestCase {
 
         // Build the FILE_RANGE payload: request 512 bytes at offset 0
         var payload = Data()
-        payload.appendLittleEndian(UInt32(512))        // rangeSize
-        payload.appendLittleEndian(UInt64(0))           // rangeOffset
-        payload.appendLittleEndian(UInt32(fileNameData.count)) // nameLen
+        payload.appendLittleEndian(UInt32(512))
+        payload.appendLittleEndian(UInt64(0))
+        payload.appendLittleEndian(UInt32(fileNameData.count))
         payload.append(fileNameData)
 
         let requestHeader = DBIHeader(commandType: .request, commandID: .fileRange, dataSize: UInt32(payload.count))
 
-        // Queue: the payload read, then ACK after our response header
-        transport.queueRead(payload)
-        let ackHeader = DBIHeader(commandType: .ack, commandID: .fileRange, dataSize: 0)
-        transport.queueRead(ackHeader.encoded())
+        // Queue the Switch side: after our ACK, Switch sends payload; after our RESPONSE, Switch sends ACK
+        transport.queueRead(payload)                   // payload sent after our ACK
+        let switchAck = DBIHeader(commandType: .ack, commandID: .fileRange, dataSize: 0)
+        transport.queueRead(switchAck.encoded())       // ACK after our RESPONSE header
 
         let handler = FileRangeCommandHandler()
 
@@ -36,19 +36,26 @@ final class FileRangeCommandHandlerTests: XCTestCase {
             fileServer: fileServer
         )
 
-        // Assert
+        // Assert: should continue
         XCTAssertEqual(result, .continue)
 
-        // Writes: RESPONSE header, then file data
-        XCTAssertEqual(transport.writtenData.count, 2)
+        // Assert: handler wrote exactly 3 things — ACK header, RESPONSE header, file data
+        XCTAssertEqual(transport.writtenData.count, 3)
 
-        let responseHeader = try transport.writtenHeader(at: 0)
+        // Write 0: ACK header (acknowledging the FILE_RANGE request)
+        let ackHeader = try transport.writtenHeader(at: 0)
+        XCTAssertEqual(ackHeader.commandType, .ack)
+        XCTAssertEqual(ackHeader.commandID, .fileRange)
+        XCTAssertEqual(ackHeader.dataSize, requestHeader.dataSize)
+
+        // Write 1: RESPONSE header with file data size
+        let responseHeader = try transport.writtenHeader(at: 1)
         XCTAssertEqual(responseHeader.commandType, .response)
         XCTAssertEqual(responseHeader.commandID, .fileRange)
         XCTAssertEqual(responseHeader.dataSize, 512)
 
-        // The actual file data
-        let sentData = transport.writtenData[1]
+        // Write 2: the actual file data
+        let sentData = transport.writtenData[2]
         XCTAssertEqual(sentData.count, 512)
         XCTAssertEqual(sentData, Data(repeating: 0x42, count: 512))
     }
@@ -57,7 +64,6 @@ final class FileRangeCommandHandlerTests: XCTestCase {
         let transport = MockTransport()
         let fileServer = MockFileServer()
 
-        // Create content where offset 100 starts with 0xFF bytes
         var content = Data(repeating: 0x00, count: 100)
         content.append(Data(repeating: 0xFF, count: 200))
         fileServer.register(name: "offset.nsp", content: content)
@@ -66,8 +72,8 @@ final class FileRangeCommandHandlerTests: XCTestCase {
         let fileNameData = Data(fileName.utf8)
 
         var payload = Data()
-        payload.appendLittleEndian(UInt32(50))          // rangeSize: 50 bytes
-        payload.appendLittleEndian(UInt64(100))         // rangeOffset: start at 100
+        payload.appendLittleEndian(UInt32(50))
+        payload.appendLittleEndian(UInt64(100))
         payload.appendLittleEndian(UInt32(fileNameData.count))
         payload.append(fileNameData)
 
@@ -78,8 +84,8 @@ final class FileRangeCommandHandlerTests: XCTestCase {
         let handler = FileRangeCommandHandler()
         _ = try await handler.handle(header: requestHeader, transport: transport, fileServer: fileServer)
 
-        // Should send 50 bytes of 0xFF (from offset 100)
-        let sentData = transport.writtenData[1]
+        // Write 0: ACK, Write 1: RESPONSE header, Write 2: file data
+        let sentData = transport.writtenData[2]
         XCTAssertEqual(sentData, Data(repeating: 0xFF, count: 50))
     }
 
@@ -89,7 +95,6 @@ final class FileRangeCommandHandlerTests: XCTestCase {
     }
 }
 
-// Helper to use the same Data extension from DBIProtocol in tests
 extension Data {
     mutating func appendLittleEndian(_ value: UInt32) {
         Swift.withUnsafeBytes(of: value.littleEndian) { append(contentsOf: $0) }

@@ -8,7 +8,7 @@ final class FileServerTests: XCTestCase {
         let (url1, url2) = try createTempFiles(["zebra.nsp": 10, "alpha.xci": 20])
 
         server.register(files: [url1, url2])
-        XCTAssertEqual(server.fileList(), "alpha.xci\nzebra.nsp")
+        XCTAssertEqual(server.fileList(), "alpha.xci\nzebra.nsp\n")
     }
 
     func testReadRangeReturnsCorrectBytes() throws {

@@ -1,7 +1,7 @@
 import Foundation
 
 /// Handles CMD_FILE_RANGE: reads a chunk of a file and sends it to the Switch.
-/// Protocol flow: read payload → send RESPONSE header → read ACK → send file data.
+/// Protocol flow: ACK the request → read payload → send RESPONSE header → read ACK → send file data.
 public struct FileRangeCommandHandler: DBICommandHandler {
     public let commandID = DBICommand.fileRange
 
@@ -12,18 +12,22 @@ public struct FileRangeCommandHandler: DBICommandHandler {
         transport: any TransportProtocol,
         fileServer: any FileServing
     ) async throws -> DBICommandResult {
-        // Read the variable-length payload
+        // Step 1: ACK the FILE_RANGE request header (Switch waits for this before sending payload)
+        let ack = DBIHeader(commandType: .ack, commandID: .fileRange, dataSize: header.dataSize)
+        try await transport.write(ack.encoded())
+
+        // Step 2: Read the variable-length payload the Switch now sends
         let payload = try await transport.read(maxLength: Int(header.dataSize))
         let request = try FileRangeRequest(from: payload)
 
-        // Read the requested file chunk
+        // Step 3: Read the requested file chunk
         let fileData = try fileServer.readRange(
             fileName: request.fileName,
             offset: request.rangeOffset,
             size: request.rangeSize
         )
 
-        // Send RESPONSE header with chunk size
+        // Step 4: Send RESPONSE header with chunk size
         let response = DBIHeader(
             commandType: .response,
             commandID: .fileRange,
@@ -31,10 +35,10 @@ public struct FileRangeCommandHandler: DBICommandHandler {
         )
         try await transport.write(response.encoded())
 
-        // Wait for Switch ACK
+        // Step 5: Wait for Switch ACK
         _ = try await transport.read(maxLength: DBIConstants.headerSize)
 
-        // Send the file data
+        // Step 6: Send the file data
         try await transport.write(fileData)
 
         return .continue

@@ -9,9 +9,11 @@ final class AppState {
     let coordinator = InstallationCoordinator()
     let deviceMonitor = USBDeviceMonitor()
     var isDeviceConnected = false
+    private var monitorTask: Task<Void, Never>?
 
     func startMonitoring() {
-        Task {
+        monitorTask?.cancel()
+        monitorTask = Task {
             for await event in deviceMonitor.events() {
                 switch event {
                 case .connected:
@@ -21,5 +23,10 @@ final class AppState {
                 }
             }
         }
+    }
+
+    func stopMonitoring() {
+        monitorTask?.cancel()
+        monitorTask = nil
     }
 }

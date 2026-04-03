@@ -15,7 +15,9 @@ public final class FileServer: FileServing, @unchecked Sendable {
     }
 
     public func fileList() -> String {
-        files.keys.sorted().joined(separator: "\n")
+        let names = files.keys.sorted()
+        guard !names.isEmpty else { return "" }
+        return names.map { $0 + "\n" }.joined()
     }
 
     public func readRange(fileName: String, offset: UInt64, size: UInt32) throws -> Data {

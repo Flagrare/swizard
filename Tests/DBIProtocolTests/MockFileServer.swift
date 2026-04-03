@@ -11,7 +11,9 @@ final class MockFileServer: FileServing, @unchecked Sendable {
     }
 
     func fileList() -> String {
-        files.keys.sorted().joined(separator: "\n")
+        let names = files.keys.sorted()
+        guard !names.isEmpty else { return "" }
+        return names.map { $0 + "\n" }.joined()
     }
 
     func readRange(fileName: String, offset: UInt64, size: UInt32) throws -> Data {

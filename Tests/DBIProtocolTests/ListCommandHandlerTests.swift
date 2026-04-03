@@ -39,7 +39,7 @@ final class ListCommandHandlerTests: XCTestCase {
         // Second write: the actual file list (newline-separated, sorted)
         let fileListData = transport.writtenData[1]
         let fileList = String(data: fileListData, encoding: .utf8)
-        XCTAssertEqual(fileList, "game1.nsp\ngame2.xci")
+        XCTAssertEqual(fileList, "game1.nsp\ngame2.xci\n")
 
         // The data size in the header should match the file list bytes
         XCTAssertEqual(responseHeader.dataSize, UInt32(fileListData.count))

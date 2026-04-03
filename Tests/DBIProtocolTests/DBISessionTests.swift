@@ -4,6 +4,7 @@ import XCTest
 final class DBISessionTests: XCTestCase {
 
     /// Scripts a complete DBI conversation: LIST → FILE_RANGE → EXIT
+    /// Verifies the exact protocol sequence including ACKs.
     func testFullInstallationConversation() async throws {
         let transport = MockTransport()
         let fileServer = MockFileServer()
@@ -23,8 +24,8 @@ final class DBISessionTests: XCTestCase {
 
         // 3. Switch sends CMD_FILE_RANGE request
         var rangePayload = Data()
-        rangePayload.appendLittleEndian(UInt32(256))              // rangeSize
-        rangePayload.appendLittleEndian(UInt64(0))                // rangeOffset
+        rangePayload.appendLittleEndian(UInt32(256))
+        rangePayload.appendLittleEndian(UInt64(0))
         rangePayload.appendLittleEndian(UInt32(fileNameData.count))
         rangePayload.append(fileNameData)
 
@@ -33,12 +34,14 @@ final class DBISessionTests: XCTestCase {
             commandID: .fileRange,
             dataSize: UInt32(rangePayload.count)
         ))
+
+        // 4. After our ACK, Switch sends the payload
         transport.queueRead(rangePayload)
 
-        // 4. Switch sends ACK after receiving our FILE_RANGE response header
+        // 5. Switch sends ACK after receiving our FILE_RANGE response header
         transport.queueReadHeader(DBIHeader(commandType: .ack, commandID: .fileRange, dataSize: 0))
 
-        // 5. Switch sends CMD_EXIT
+        // 6. Switch sends CMD_EXIT
         transport.queueReadHeader(DBIHeader(commandType: .request, commandID: .exit, dataSize: 0))
 
         // Run the session
@@ -51,37 +54,39 @@ final class DBISessionTests: XCTestCase {
         XCTAssertEqual(listResponse.commandType, .response)
         XCTAssertEqual(listResponse.commandID, .list)
 
-        // Write 1: file list bytes
+        // Write 1: file list bytes (with trailing newline per DBI spec)
         let fileList = String(data: transport.writtenData[1], encoding: .utf8)
-        XCTAssertEqual(fileList, "game.nsp")
+        XCTAssertEqual(fileList, "game.nsp\n")
 
-        // Write 2: FILE_RANGE response header
-        let rangeResponse = try transport.writtenHeader(at: 2)
+        // Write 2: FILE_RANGE ACK header (acknowledging the request)
+        let rangeAck = try transport.writtenHeader(at: 2)
+        XCTAssertEqual(rangeAck.commandType, .ack)
+        XCTAssertEqual(rangeAck.commandID, .fileRange)
+
+        // Write 3: FILE_RANGE response header
+        let rangeResponse = try transport.writtenHeader(at: 3)
         XCTAssertEqual(rangeResponse.commandType, .response)
         XCTAssertEqual(rangeResponse.commandID, .fileRange)
         XCTAssertEqual(rangeResponse.dataSize, 256)
 
-        // Write 3: file data
-        XCTAssertEqual(transport.writtenData[3], fileContent)
+        // Write 4: file data
+        XCTAssertEqual(transport.writtenData[4], fileContent)
 
-        // Write 4: EXIT response header
-        let exitResponse = try transport.writtenHeader(at: 4)
+        // Write 5: EXIT response header
+        let exitResponse = try transport.writtenHeader(at: 5)
         XCTAssertEqual(exitResponse.commandType, .response)
         XCTAssertEqual(exitResponse.commandID, .exit)
     }
 
-    /// Session should stop after receiving EXIT command.
     func testSessionStopsOnExit() async throws {
         let transport = MockTransport()
         let fileServer = MockFileServer()
 
-        // Just send EXIT immediately
         transport.queueReadHeader(DBIHeader(commandType: .request, commandID: .exit, dataSize: 0))
 
         let session = DBISession()
         try await session.run(transport: transport, fileServer: fileServer)
 
-        // Should have written exactly 1 response (the EXIT response)
         XCTAssertEqual(transport.writtenData.count, 1)
     }
 }

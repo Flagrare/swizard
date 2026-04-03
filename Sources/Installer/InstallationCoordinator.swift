@@ -51,8 +51,7 @@ public final class InstallationCoordinator: @unchecked Sendable {
     public func cancel() {
         installTask?.cancel()
         installTask = nil
-        state = .idle
-        log("Installation cancelled")
+        log("Cancellation requested")
     }
 
     public func reset() {

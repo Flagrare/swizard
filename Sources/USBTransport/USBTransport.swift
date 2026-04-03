@@ -6,7 +6,7 @@ import DBIProtocol
 /// All libusb calls run on a dedicated serial DispatchQueue to avoid blocking
 /// the Swift cooperative thread pool.
 public final class USBTransport: TransportProtocol, @unchecked Sendable {
-    private static let usbQueue = DispatchQueue(label: "com.swizard.usb", qos: .userInitiated)
+    private let usbQueue = DispatchQueue(label: "com.swizard.usb.\(UUID().uuidString)", qos: .userInitiated)
 
     // Nintendo Switch USB identifiers
     static let vendorID: UInt16 = 0x057E
@@ -22,7 +22,7 @@ public final class USBTransport: TransportProtocol, @unchecked Sendable {
 
     public func connect() async throws {
         try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, any Error>) in
-            Self.usbQueue.async { [self] in
+            self.usbQueue.async { [self] in
                 do {
                     try self.initializeAndOpen()
                     continuation.resume()
@@ -35,7 +35,7 @@ public final class USBTransport: TransportProtocol, @unchecked Sendable {
 
     public func disconnect() async throws {
         await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
-            Self.usbQueue.async { [self] in
+            self.usbQueue.async { [self] in
                 self.cleanup()
                 continuation.resume()
             }
@@ -44,7 +44,7 @@ public final class USBTransport: TransportProtocol, @unchecked Sendable {
 
     public func read(maxLength: Int) async throws -> Data {
         try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Data, any Error>) in
-            Self.usbQueue.async { [self] in
+            self.usbQueue.async { [self] in
                 guard let handle = self.handle else {
                     continuation.resume(throwing: USBError.notConnected)
                     return
@@ -77,7 +77,7 @@ public final class USBTransport: TransportProtocol, @unchecked Sendable {
 
     public func write(_ data: Data) async throws {
         try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, any Error>) in
-            Self.usbQueue.async { [self] in
+            self.usbQueue.async { [self] in
                 guard let handle = self.handle else {
                     continuation.resume(throwing: USBError.notConnected)
                     return
