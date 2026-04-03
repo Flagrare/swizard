@@ -5,7 +5,8 @@ import IOUSBHost
 import DBIProtocol
 
 /// Adapter: wraps Apple's IOUSBHost framework for USB bulk transfers.
-/// Uses DeviceSeize to ask macOS's kernel driver to release the Switch.
+/// Uses a privileged helper (admin password prompt) to claim the device
+/// from macOS's kernel driver via DeviceCapture.
 public final class IOUSBHostAdapter: USBBulkTransferProtocol, @unchecked Sendable {
     private let usbQueue = DispatchQueue(label: "com.swizard.iousbhost", qos: .userInitiated)
     private var hostDevice: IOUSBHostDevice?
@@ -16,10 +17,23 @@ public final class IOUSBHostAdapter: USBBulkTransferProtocol, @unchecked Sendabl
     public init() {}
 
     public func open(vendorID: UInt16, productID: UInt16) async throws {
+        // Step 1: Verify device exists
+        guard USBDeviceScanner.findDevice(vendorID: vendorID, productID: productID) != nil else {
+            throw IOUSBHostError.deviceNotFound
+        }
+
+        // Step 2: Use privileged helper to release kernel drivers via DeviceCapture
+        // This prompts the user for admin password once
+        try await PrivilegedUSBClaim.claimDevice(vendorID: vendorID, productID: productID)
+
+        // Step 3: Brief wait for device re-enumeration after DeviceCapture destroy
+        try await Task.sleep(for: .seconds(1.5))
+
+        // Step 4: Now open the device normally — drivers should be unloaded
         try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, any Error>) in
             usbQueue.async { [self] in
                 do {
-                    try self.findAndOpen(vendorID: vendorID, productID: productID)
+                    try self.openAfterClaim(vendorID: vendorID, productID: productID)
                     continuation.resume()
                 } catch {
                     self.cleanup()
@@ -86,44 +100,50 @@ public final class IOUSBHostAdapter: USBBulkTransferProtocol, @unchecked Sendabl
 
     // MARK: - Private
 
-    private func findAndOpen(vendorID: UInt16, productID: UInt16) throws {
-        // Step 1: Find device via scanner
+    private func openAfterClaim(vendorID: UInt16, productID: UInt16) throws {
+        // Re-find device (service ID may have changed after DeviceCapture reset)
         guard let deviceInfo = USBDeviceScanner.findDevice(vendorID: vendorID, productID: productID) else {
             throw IOUSBHostError.deviceNotFound
         }
 
-        // Step 2: Open device — try DeviceSeize first, then plain open
-        let device = try openDevice(service: deviceInfo.service)
-        self.hostDevice = device
-
-        // Step 3: Configure device WITHOUT auto-matching interfaces
-        // matchInterfaces:false prevents AppleUSBHostCompositeDevice from claiming
-        try device.__configure(withValue: 1, matchInterfaces: false)
-
-        // Step 4: Wait for interface services to appear
-        Thread.sleep(forTimeInterval: 1.0)
-
-        // Step 5: Find interface child — re-scan IORegistry since configure created new services
-        guard let ifaceService = findInterfaceChild(deviceService: deviceInfo.service) else {
-            throw IOUSBHostError.claimFailed("No interface appeared after configure")
-        }
-
-        // Step 6: Open interface with DeviceSeize to claim from any driver
-        let iface: IOUSBHostInterface
-        if let seized = try? IOUSBHostInterface(
-            __ioService: ifaceService,
+        // Open device — after privileged claim, DeviceSeize should work
+        let device: IOUSBHostDevice
+        if let seized = try? IOUSBHostDevice(
+            __ioService: deviceInfo.service,
             options: .deviceSeize,
             queue: usbQueue,
             interestHandler: nil
         ) {
-            iface = seized
-        } else if let plain = try? IOUSBHostInterface(
+            device = seized
+        } else if let plain = try? IOUSBHostDevice(
+            __ioService: deviceInfo.service,
+            options: [],
+            queue: usbQueue,
+            interestHandler: nil
+        ) {
+            device = plain
+        } else {
+            throw IOUSBHostError.seizeRejected
+        }
+        self.hostDevice = device
+
+        // Configure without matching to prevent kernel re-claiming
+        try device.__configure(withValue: 1, matchInterfaces: false)
+        Thread.sleep(forTimeInterval: 0.5)
+
+        // Find and open interface
+        guard let ifaceService = findInterfaceChild(deviceService: deviceInfo.service) else {
+            throw IOUSBHostError.claimFailed("No interface appeared after configure")
+        }
+
+        let iface: IOUSBHostInterface
+        if let opened = try? IOUSBHostInterface(
             __ioService: ifaceService,
             options: [],
             queue: usbQueue,
             interestHandler: nil
         ) {
-            iface = plain
+            iface = opened
         } else {
             IOObjectRelease(ifaceService)
             throw IOUSBHostError.claimFailed("Failed to open interface")
@@ -131,34 +151,11 @@ public final class IOUSBHostAdapter: USBBulkTransferProtocol, @unchecked Sendabl
         IOObjectRelease(ifaceService)
         self.hostInterface = iface
 
-        // Step 7: Find bulk endpoints
+        // Find bulk endpoints
         try findBulkEndpoints(interface: iface)
     }
 
-    private func openDevice(service: io_service_t) throws -> IOUSBHostDevice {
-        if let device = try? IOUSBHostDevice(
-            __ioService: service,
-            options: .deviceSeize,
-            queue: usbQueue,
-            interestHandler: nil
-        ) {
-            return device
-        }
-
-        if let device = try? IOUSBHostDevice(
-            __ioService: service,
-            options: [],
-            queue: usbQueue,
-            interestHandler: nil
-        ) {
-            return device
-        }
-
-        throw IOUSBHostError.seizeRejected
-    }
-
     private func findInterfaceChild(deviceService: io_service_t) -> io_service_t? {
-        // Re-scan for the device (it may have a new ID after configure)
         let allDevices = USBDeviceScanner.findAllDevices()
         guard let deviceInfo = allDevices.first(where: {
             $0.vendorID == NintendoSwitchUSB.vendorID && $0.productID == NintendoSwitchUSB.mtpProductID
@@ -173,13 +170,11 @@ public final class IOUSBHostAdapter: USBBulkTransferProtocol, @unchecked Sendabl
         while true {
             let child = IOIteratorNext(iterator)
             guard child != 0 else { break }
-
             if IOObjectConformsTo(child, "IOUSBHostInterface") != 0 {
                 return child
             }
             IOObjectRelease(child)
         }
-
         return nil
     }
 
