@@ -18,7 +18,7 @@ let package = Package(
         // Infrastructure — USB device communication
         .target(
             name: "USBTransport",
-            dependencies: ["CLibUSB"]
+            dependencies: ["CLibUSB", "DBIProtocol"]
         ),
 
         // Domain — DBI protocol encode/decode and command handling
