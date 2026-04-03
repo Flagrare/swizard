@@ -2,13 +2,10 @@ import Foundation
 import IOKit
 import IOKit.usb
 import IOUSBHost
+import DBIProtocol
 
 /// Adapter: wraps Apple's IOUSBHost framework for USB bulk transfers.
 /// Uses DeviceSeize to ask macOS's kernel driver to release the Switch.
-///
-/// Implementation note: IOUSBHost on macOS requires matching both the device
-/// and its interfaces as separate IOKit services. The adapter handles this
-/// complexity internally.
 public final class IOUSBHostAdapter: USBBulkTransferProtocol, @unchecked Sendable {
     private let usbQueue = DispatchQueue(label: "com.swizard.iousbhost", qos: .userInitiated)
     private var hostDevice: IOUSBHostDevice?
@@ -25,6 +22,7 @@ public final class IOUSBHostAdapter: USBBulkTransferProtocol, @unchecked Sendabl
                     try self.findAndOpen(vendorID: vendorID, productID: productID)
                     continuation.resume()
                 } catch {
+                    self.cleanup()
                     continuation.resume(throwing: error)
                 }
             }
@@ -47,7 +45,6 @@ public final class IOUSBHostAdapter: USBBulkTransferProtocol, @unchecked Sendabl
                     continuation.resume(throwing: IOUSBHostError.readFailed("No IN pipe"))
                     return
                 }
-
                 do {
                     let buffer = NSMutableData(length: maxLength)!
                     var bytesRead: Int = 0
@@ -71,7 +68,6 @@ public final class IOUSBHostAdapter: USBBulkTransferProtocol, @unchecked Sendabl
                     continuation.resume(throwing: IOUSBHostError.writeFailed("No OUT pipe"))
                     return
                 }
-
                 do {
                     let mutableData = NSMutableData(data: data)
                     var bytesWritten: Int = 0
@@ -91,42 +87,54 @@ public final class IOUSBHostAdapter: USBBulkTransferProtocol, @unchecked Sendabl
     // MARK: - Private
 
     private func findAndOpen(vendorID: UInt16, productID: UInt16) throws {
-        // Step 1: Find device service via IOKit
-        let deviceService = try findDeviceService(vendorID: vendorID, productID: productID)
-        defer { IOObjectRelease(deviceService) }
+        // Step 1: Find device via scanner
+        guard let deviceInfo = USBDeviceScanner.findDevice(vendorID: vendorID, productID: productID) else {
+            throw IOUSBHostError.deviceNotFound
+        }
 
-        // Step 2: Open device with DeviceSeize (asks kernel driver to release)
-        let device = try openDevice(service: deviceService)
+        // Step 2: Open device — try DeviceSeize first, then plain open
+        let device = try openDevice(service: deviceInfo.service)
         self.hostDevice = device
 
-        // Step 3: Configure device to expose interfaces, then find and claim one
+        // Step 3: Configure device to create interface children
         try device.__configure(withValue: 1, matchInterfaces: true)
 
-        // Brief delay for interface matching
-        Thread.sleep(forTimeInterval: 0.5)
+        // Step 4: Wait for interface matching
+        Thread.sleep(forTimeInterval: 1.0)
 
-        // Step 4: Find and open the first interface child service
-        let interfaceService = try findInterfaceService(deviceService: deviceService)
-        defer { IOObjectRelease(interfaceService) }
+        // Step 5: Find interface child — re-scan IORegistry since configure created new services
+        guard let ifaceService = findInterfaceChild(deviceService: deviceInfo.service) else {
+            throw IOUSBHostError.claimFailed("No interface appeared after configure")
+        }
 
-        let iface = try openInterface(service: interfaceService)
+        // Step 6: Open interface with DeviceSeize to claim from any driver
+        let iface: IOUSBHostInterface
+        if let seized = try? IOUSBHostInterface(
+            __ioService: ifaceService,
+            options: .deviceSeize,
+            queue: usbQueue,
+            interestHandler: nil
+        ) {
+            iface = seized
+        } else if let plain = try? IOUSBHostInterface(
+            __ioService: ifaceService,
+            options: [],
+            queue: usbQueue,
+            interestHandler: nil
+        ) {
+            iface = plain
+        } else {
+            IOObjectRelease(ifaceService)
+            throw IOUSBHostError.claimFailed("Failed to open interface")
+        }
+        IOObjectRelease(ifaceService)
         self.hostInterface = iface
 
-        // Step 5: Find bulk endpoints and create pipes
+        // Step 7: Find bulk endpoints
         try findBulkEndpoints(interface: iface)
     }
 
-    private func findDeviceService(vendorID: UInt16, productID: UInt16) throws -> io_service_t {
-        // IOKit matching by idVendor doesn't work with IOUSBHostDevice on modern macOS.
-        // Use USBDeviceScanner to enumerate all devices and filter in code.
-        guard let device = USBDeviceScanner.findDevice(vendorID: vendorID, productID: productID) else {
-            throw IOUSBHostError.deviceNotFound
-        }
-        return device.service
-    }
-
     private func openDevice(service: io_service_t) throws -> IOUSBHostDevice {
-        // Try DeviceSeize first
         if let device = try? IOUSBHostDevice(
             __ioService: service,
             options: .deviceSeize,
@@ -136,7 +144,6 @@ public final class IOUSBHostAdapter: USBBulkTransferProtocol, @unchecked Sendabl
             return device
         }
 
-        // Fallback: try without flags
         if let device = try? IOUSBHostDevice(
             __ioService: service,
             options: [],
@@ -149,15 +156,19 @@ public final class IOUSBHostAdapter: USBBulkTransferProtocol, @unchecked Sendabl
         throw IOUSBHostError.seizeRejected
     }
 
-    private func findInterfaceService(deviceService: io_service_t) throws -> io_service_t {
-        var iterator: io_iterator_t = 0
+    private func findInterfaceChild(deviceService: io_service_t) -> io_service_t? {
+        // Re-scan for the device (it may have a new ID after configure)
+        let allDevices = USBDeviceScanner.findAllDevices()
+        guard let deviceInfo = allDevices.first(where: {
+            $0.vendorID == NintendoSwitchUSB.vendorID && $0.productID == NintendoSwitchUSB.mtpProductID
+        }) else { return nil }
 
-        guard IORegistryEntryGetChildIterator(deviceService, kIOServicePlane, &iterator) == KERN_SUCCESS else {
-            throw IOUSBHostError.claimFailed("Cannot enumerate interfaces")
+        var iterator: io_iterator_t = 0
+        guard IORegistryEntryGetChildIterator(deviceInfo.service, kIOServicePlane, &iterator) == KERN_SUCCESS else {
+            return nil
         }
         defer { IOObjectRelease(iterator) }
 
-        // Find first IOUSBHostInterface child
         while true {
             let child = IOIteratorNext(iterator)
             guard child != 0 else { break }
@@ -168,27 +179,13 @@ public final class IOUSBHostAdapter: USBBulkTransferProtocol, @unchecked Sendabl
             IOObjectRelease(child)
         }
 
-        throw IOUSBHostError.claimFailed("No USB interface found")
-    }
-
-    private func openInterface(service: io_service_t) throws -> IOUSBHostInterface {
-        if let iface = try? IOUSBHostInterface(
-            __ioService: service,
-            options: [],
-            queue: usbQueue,
-            interestHandler: nil
-        ) {
-            return iface
-        }
-
-        throw IOUSBHostError.claimFailed("Failed to open interface")
+        return nil
     }
 
     private func findBulkEndpoints(interface: IOUSBHostInterface) throws {
         let configDesc = interface.configurationDescriptor
         let ifaceDesc = interface.interfaceDescriptor
 
-        // Walk endpoint descriptors using Apple's descriptor parsing API
         var currentHeader: UnsafePointer<IOUSBDescriptorHeader>?
         var ep = IOUSBGetNextEndpointDescriptor(configDesc, ifaceDesc, currentHeader)
 
@@ -204,7 +201,6 @@ public final class IOUSBHostAdapter: USBBulkTransferProtocol, @unchecked Sendabl
                 }
             }
 
-            // Advance: cast endpoint back to generic descriptor header for next iteration
             currentHeader = UnsafeRawPointer(endpoint).assumingMemoryBound(to: IOUSBDescriptorHeader.self)
             ep = IOUSBGetNextEndpointDescriptor(configDesc, ifaceDesc, currentHeader)
         }

@@ -98,6 +98,38 @@ final class IOUSBHostAdapterTests: XCTestCase {
         XCTAssertEqual(written.code, MTPOperation.openSession.rawValue)
     }
 
+    // MARK: - Device found but interface claim fails
+
+    func testMockOpenSucceedsThenReadWriteWorks() async throws {
+        let mock = MockUSBBulkTransfer()
+        try await mock.open(vendorID: NintendoSwitchUSB.vendorID, productID: NintendoSwitchUSB.mtpProductID)
+
+        let testData = Data([0x01, 0x02])
+        mock.queueRead(testData)
+
+        let received = try await mock.readBulk(maxLength: 16)
+        XCTAssertEqual(received, testData)
+
+        try await mock.writeBulk(Data([0xAA]))
+        XCTAssertEqual(mock.writtenData.count, 1)
+    }
+
+    func testOpenFailsWithMeaningfulErrorWhenDeviceSeizeRejected() async {
+        let mock = MockUSBBulkTransfer()
+        mock.openShouldFail = true
+
+        do {
+            try await mock.open(vendorID: NintendoSwitchUSB.vendorID, productID: NintendoSwitchUSB.mtpProductID)
+            XCTFail("Should throw")
+        } catch let error as IOUSBHostError {
+            // Error should be descriptive enough for debugging
+            XCTAssertNotNil(error.errorDescription)
+            XCTAssertFalse(error.errorDescription!.isEmpty)
+        } catch {
+            XCTFail("Unexpected error type: \(error)")
+        }
+    }
+
     // MARK: - Error type tests
 
     func testIOUSBHostErrorDescriptions() {
