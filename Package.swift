@@ -51,5 +51,9 @@ let package = Package(
             name: "InstallerTests",
             dependencies: ["Installer"]
         ),
+        .testTarget(
+            name: "SWizardTests",
+            dependencies: ["SWizard"]
+        ),
     ]
 )

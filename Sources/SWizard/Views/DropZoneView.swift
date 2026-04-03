@@ -5,8 +5,6 @@ struct DropZoneView: View {
     let onDrop: ([URL]) -> Void
     @State private var isTargeted = false
 
-    private static let supportedExtensions: Set<String> = ["nsp", "nsz", "xci", "xcz"]
-
     var body: some View {
         RoundedRectangle(cornerRadius: 12)
             .strokeBorder(
@@ -38,8 +36,7 @@ struct DropZoneView: View {
             var urls: [URL] = []
             for provider in providers {
                 if let data = await loadFileURLData(from: provider),
-                   let url = URL(dataRepresentation: data, relativeTo: nil),
-                   Self.supportedExtensions.contains(url.pathExtension.lowercased()) {
+                   let url = DropFileFilter.resolveSupportedURL(fromFileURLData: data) {
                     urls.append(url)
                 }
             }
