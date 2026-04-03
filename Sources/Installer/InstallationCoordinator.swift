@@ -27,7 +27,7 @@ public final class InstallationCoordinator {
     private var installTask: Task<Void, Never>?
 
     public init(transport: (any TransportProtocol)? = nil) {
-        self.transport = transport ?? USBTransport()
+        self.transport = transport ?? USBTransport().withRetry()
         let adapter = SessionDelegateAdapter()
         self.sessionDelegateAdapter = adapter
         self.session = DBISession()

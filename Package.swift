@@ -40,6 +40,10 @@ let package = Package(
 
         // Tests
         .testTarget(
+            name: "USBTransportTests",
+            dependencies: ["USBTransport", "DBIProtocol"]
+        ),
+        .testTarget(
             name: "DBIProtocolTests",
             dependencies: ["DBIProtocol"]
         ),

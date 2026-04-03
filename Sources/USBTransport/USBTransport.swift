@@ -64,7 +64,7 @@ public final class USBTransport: TransportProtocol, @unchecked Sendable {
 
                 if result == LIBUSB_ERROR_TIMEOUT.rawValue {
                     continuation.resume(throwing: USBError.timeout)
-                } else if result == LIBUSB_ERROR_NO_DEVICE.rawValue || result == LIBUSB_ERROR_PIPE.rawValue {
+                } else if result == LIBUSB_ERROR_NO_DEVICE.rawValue {
                     continuation.resume(throwing: USBError.disconnected)
                 } else if result < 0 {
                     continuation.resume(throwing: USBError.transferFailed(result))
@@ -106,7 +106,7 @@ public final class USBTransport: TransportProtocol, @unchecked Sendable {
                     if result == LIBUSB_ERROR_TIMEOUT.rawValue {
                         continuation.resume(throwing: USBError.timeout)
                         return
-                    } else if result == LIBUSB_ERROR_NO_DEVICE.rawValue || result == LIBUSB_ERROR_PIPE.rawValue {
+                    } else if result == LIBUSB_ERROR_NO_DEVICE.rawValue {
                         continuation.resume(throwing: USBError.disconnected)
                         return
                     } else if result < 0 {
@@ -119,6 +119,25 @@ public final class USBTransport: TransportProtocol, @unchecked Sendable {
 
                 continuation.resume()
             }
+        }
+    }
+
+    // MARK: - Stall Recovery
+
+    /// Clears a stalled endpoint. Called by RetryableTransport on PIPE errors.
+    public func clearHalt(endpoint: UInt8) {
+        self.usbQueue.sync {
+            guard let handle else { return }
+            libusb_clear_halt(handle, endpoint)
+        }
+    }
+
+    /// Creates a RetryableTransport wrapping this transport with stall recovery wired up.
+    public func withRetry(policy: RetryPolicy = .default) -> RetryableTransport {
+        RetryableTransport(inner: self, policy: policy) { [weak self] in
+            guard let self else { return }
+            self.clearHalt(endpoint: self.inEndpoint)
+            self.clearHalt(endpoint: self.outEndpoint)
         }
     }
 

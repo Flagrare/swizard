@@ -10,5 +10,23 @@
 			<integer>0</integer>
 		</dict>
 	</dict>
+	<key>SuppressBuildableAutocreation</key>
+	<dict>
+		<key>DBIProtocolTests</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>InstallerTests</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>SWizard</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+	</dict>
 </dict>
 </plist>

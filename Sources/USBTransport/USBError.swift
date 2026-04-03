@@ -18,4 +18,22 @@ public enum USBError: LocalizedError, Equatable {
         case .notConnected: "Not connected to Switch"
         }
     }
+
+    /// Whether this error is transient and the operation should be retried.
+    public var isRetryable: Bool {
+        switch self {
+        case .timeout: return true
+        case .transferFailed(let code):
+            // PIPE (-9), OVERFLOW (-8), INTERRUPTED (-10)
+            return code == -9 || code == -8 || code == -10
+        case .disconnected, .deviceNotFound, .claimFailed, .notConnected:
+            return false
+        }
+    }
+
+    /// Whether this error indicates an endpoint stall requiring libusb_clear_halt.
+    public var requiresStallRecovery: Bool {
+        if case .transferFailed(let code) = self { return code == -9 }
+        return false
+    }
 }
