@@ -39,6 +39,12 @@ let package = Package(
             dependencies: ["CLibMTP", "DBIProtocol"]
         ),
 
+        // Infrastructure — Native MTP via IOUSBHost (replaces libmtp)
+        .target(
+            name: "NativeMTPTransport",
+            dependencies: ["DBIProtocol", "MTPTransport"]
+        ),
+
         // Infrastructure — HTTP network file server
         .target(
             name: "NetworkTransport",
@@ -73,6 +79,10 @@ let package = Package(
         .testTarget(
             name: "MTPTransportTests",
             dependencies: ["MTPTransport", "DBIProtocol"]
+        ),
+        .testTarget(
+            name: "NativeMTPTransportTests",
+            dependencies: ["NativeMTPTransport", "MTPTransport"]
         ),
         .testTarget(
             name: "NetworkTransportTests",
