@@ -2,6 +2,7 @@ import Foundation
 import DBIProtocol
 import USBTransport
 import MTPTransport
+import NetworkTransport
 
 /// Mediator: orchestrates USB connection, DBI protocol, and file serving.
 /// MainActor-isolated to safely drive @Observable state for SwiftUI.
@@ -21,6 +22,7 @@ public final class InstallationCoordinator {
     public enum TransportMode: String, Sendable, CaseIterable {
         case dbiBackend = "DBI Backend"
         case mtp = "MTP"
+        case network = "Network"
     }
 
     public private(set) var state: State = .idle
@@ -34,8 +36,10 @@ public final class InstallationCoordinator {
     private let session: DBISession
     private let sessionDelegateAdapter: SessionDelegateAdapter
     private let reconnectPolicy: ReconnectPolicy
+    private let networkServer = NetworkInstallServer()
     private var installTask: Task<Void, Never>?
     private var queuedURLs: [URL] = []
+    public private(set) var networkInfo: String?
 
     public init(
         transport: (any TransportProtocol)? = nil,
@@ -90,10 +94,12 @@ public final class InstallationCoordinator {
 
     public func reset() {
         cancel()
+        networkServer.stop()
         state = .idle
         progress.clear()
         logs.removeAll()
         queuedURLs.removeAll()
+        networkInfo = nil
     }
 
     // MARK: - Private
@@ -104,6 +110,8 @@ public final class InstallationCoordinator {
             await runDBIBackendInstallation()
         case .mtp:
             await runMTPInstallation()
+        case .network:
+            await runNetworkInstallation()
         }
         installTask = nil
     }
@@ -194,6 +202,45 @@ public final class InstallationCoordinator {
             state = .error(error.localizedDescription)
             log("Error: \(error.localizedDescription)", level: .error)
         }
+    }
+
+    // MARK: - Network Path
+
+    private func runNetworkInstallation() async {
+        state = .connecting
+        log("Starting HTTP server for network install...", level: .info)
+
+        do {
+            // Capture file names before entering @Sendable closure
+            let fileNames = queuedURLs.map(\.lastPathComponent)
+            let urlList = try networkServer.start(files: queuedURLs) { [weak self] fileIndex, bytesSent, _ in
+                let fileName = fileIndex < fileNames.count ? fileNames[fileIndex] : "file \(fileIndex)"
+                Task { @MainActor in
+                    self?.progress.updateProgress(fileName: fileName, transferredBytes: bytesSent)
+                }
+            }
+
+            let host = NetworkInstallServer.localIPAddress() ?? "localhost"
+            networkInfo = "\(host):5000"
+            state = .transferring
+            log("HTTP server running at \(host):5000", level: .info)
+            log("File URLs:\n\(urlList)", level: .debug)
+            log("On your Switch: DBI → Run HTTP server → enter this URL", level: .info)
+
+            // Keep server running until cancelled
+            while !Task.isCancelled {
+                try await Task.sleep(for: .seconds(1))
+            }
+        } catch is CancellationError {
+            state = .idle
+            log("Network server stopped", level: .warning)
+        } catch {
+            state = .error(error.localizedDescription)
+            log("Error: \(error.localizedDescription)", level: .error)
+        }
+
+        networkServer.stop()
+        networkInfo = nil
     }
 
     func log(_ message: String, level: LogLevel = .info) {

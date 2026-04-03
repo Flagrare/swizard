@@ -46,6 +46,8 @@ final class AppState {
             "On your Switch, open DBI and select \"Run DBI backend\" before connecting USB."
         case .mtp:
             "On your Switch, open DBI and select \"Run MTP responder\" before connecting USB."
+        case .network:
+            "Drop files, click Install, then on your Switch: DBI → Run HTTP server → enter the URL shown below."
         }
     }
 

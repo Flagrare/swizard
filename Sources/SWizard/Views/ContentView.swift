@@ -38,6 +38,10 @@ struct ContentView: View {
                 installHelpBanner
             }
 
+            if let networkInfo = appState.coordinator.networkInfo {
+                networkInfoBanner(address: networkInfo)
+            }
+
             Divider()
 
             DropZoneView { urls in
@@ -96,6 +100,23 @@ struct ContentView: View {
             }
             .buttonStyle(.borderless)
             .font(.caption)
+        }
+        .padding(10)
+    }
+
+    private func networkInfoBanner(address: String) -> some View {
+        HStack(spacing: 10) {
+            Image(systemName: "wifi")
+                .foregroundStyle(.green)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Server running")
+                    .font(.subheadline.weight(.semibold))
+                Text("http://\(address)")
+                    .font(.system(.caption, design: .monospaced))
+                    .foregroundStyle(.secondary)
+                    .textSelection(.enabled)
+            }
         }
         .padding(10)
     }

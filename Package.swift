@@ -39,10 +39,16 @@ let package = Package(
             dependencies: ["CLibMTP", "DBIProtocol"]
         ),
 
-        // Orchestration — wires protocol + USB + MTP + file serving
+        // Infrastructure — HTTP network file server
+        .target(
+            name: "NetworkTransport",
+            dependencies: ["DBIProtocol"]
+        ),
+
+        // Orchestration — wires protocol + USB + MTP + Network + file serving
         .target(
             name: "Installer",
-            dependencies: ["USBTransport", "DBIProtocol", "MTPTransport"]
+            dependencies: ["USBTransport", "DBIProtocol", "MTPTransport", "NetworkTransport"]
         ),
 
         // Presentation — SwiftUI app
@@ -67,6 +73,10 @@ let package = Package(
         .testTarget(
             name: "MTPTransportTests",
             dependencies: ["MTPTransport", "DBIProtocol"]
+        ),
+        .testTarget(
+            name: "NetworkTransportTests",
+            dependencies: ["NetworkTransport"]
         ),
         .testTarget(
             name: "SWizardTests",
