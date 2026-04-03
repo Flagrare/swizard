@@ -25,11 +25,17 @@ struct ContentView: View {
 
     private var leftPanel: some View {
         VStack(alignment: .leading, spacing: 0) {
-            ConnectionStatusView(isConnected: appState.isDeviceConnected)
+            transportModePicker
+
+            Divider()
+
+            ConnectionStatusView(
+                isConnected: appState.isDeviceConnected,
+                mode: appState.coordinator.transportMode
+            )
 
             if appState.showInstallHelp {
                 installHelpBanner
-                Divider()
             }
 
             Divider()
@@ -51,6 +57,25 @@ struct ContentView: View {
         }
     }
 
+    // MARK: - Transport Mode Picker
+
+    private var transportModePicker: some View {
+        Picker("Mode", selection: Binding(
+            get: { appState.coordinator.transportMode },
+            set: { appState.coordinator.transportMode = $0 }
+        )) {
+            ForEach(InstallationCoordinator.TransportMode.allCases, id: \.self) { mode in
+                Text(mode.rawValue).tag(mode)
+            }
+        }
+        .pickerStyle(.segmented)
+        .padding(.horizontal)
+        .padding(.vertical, 8)
+        .disabled(appState.isTransferActive)
+    }
+
+    // MARK: - Help Banner
+
     private var installHelpBanner: some View {
         HStack(alignment: .top, spacing: 10) {
             Image(systemName: "info.circle.fill")
@@ -59,7 +84,7 @@ struct ContentView: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text("Quick setup tip")
                     .font(.subheadline.weight(.semibold))
-                Text("On your Switch, open DBI and select \"Run DBI backend\" before connecting USB. SWizard uses DBI backend mode, not MTP responder.")
+                Text(appState.installHelpText)
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -116,7 +141,7 @@ struct ContentView: View {
                 appState.coordinator.startInstallation()
             }
             .buttonStyle(.borderedProminent)
-            .disabled(!appState.isDeviceConnected || appState.coordinator.progress.files.isEmpty)
+            .disabled(appState.coordinator.progress.files.isEmpty)
 
         case .connecting:
             HStack(spacing: 8) {

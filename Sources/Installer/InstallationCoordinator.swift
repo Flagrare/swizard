@@ -1,6 +1,7 @@
 import Foundation
 import DBIProtocol
 import USBTransport
+import MTPTransport
 
 /// Mediator: orchestrates USB connection, DBI protocol, and file serving.
 /// MainActor-isolated to safely drive @Observable state for SwiftUI.
@@ -17,22 +18,32 @@ public final class InstallationCoordinator {
         case error(String)
     }
 
+    public enum TransportMode: String, Sendable, CaseIterable {
+        case dbiBackend = "DBI Backend"
+        case mtp = "MTP"
+    }
+
     public private(set) var state: State = .idle
+    public var transportMode: TransportMode = .mtp
     public let progress = TransferProgress()
     public private(set) var logs: [LogEntry] = []
 
     private let transport: any TransportProtocol
+    private let mtpDevice: any MTPDeviceProtocol
     private let fileServer = FileServer()
     private let session: DBISession
     private let sessionDelegateAdapter: SessionDelegateAdapter
     private let reconnectPolicy: ReconnectPolicy
     private var installTask: Task<Void, Never>?
+    private var queuedURLs: [URL] = []
 
     public init(
         transport: (any TransportProtocol)? = nil,
+        mtpDevice: (any MTPDeviceProtocol)? = nil,
         reconnectPolicy: ReconnectPolicy = .default
     ) {
         self.transport = transport ?? USBTransport().withRetry()
+        self.mtpDevice = mtpDevice ?? MTPDevice()
         self.reconnectPolicy = reconnectPolicy
         let adapter = SessionDelegateAdapter()
         self.sessionDelegateAdapter = adapter
@@ -41,6 +52,7 @@ public final class InstallationCoordinator {
     }
 
     public func queueFiles(_ urls: [URL]) {
+        queuedURLs.append(contentsOf: urls)
         fileServer.register(files: urls)
         for url in urls {
             let size = (try? FileManager.default.attributesOfItem(atPath: url.path)[.size] as? UInt64) ?? 0
@@ -81,13 +93,26 @@ public final class InstallationCoordinator {
         state = .idle
         progress.clear()
         logs.removeAll()
+        queuedURLs.removeAll()
     }
 
     // MARK: - Private
 
     private func runInstallation() async {
+        switch transportMode {
+        case .dbiBackend:
+            await runDBIBackendInstallation()
+        case .mtp:
+            await runMTPInstallation()
+        }
+        installTask = nil
+    }
+
+    // MARK: - DBI Backend Path
+
+    private func runDBIBackendInstallation() async {
         state = .connecting
-        log("Connecting to Switch...", level: .info)
+        log("Connecting to Switch (DBI Backend)...", level: .info)
 
         do {
             try await transport.connect()
@@ -107,7 +132,6 @@ public final class InstallationCoordinator {
         }
 
         try? await transport.disconnect()
-        installTask = nil
     }
 
     private func runSessionWithReconnect() async throws {
@@ -117,7 +141,7 @@ public final class InstallationCoordinator {
             do {
                 state = .transferring
                 try await session.run(transport: transport, fileServer: fileServer)
-                return // Session completed normally (EXIT received)
+                return
             } catch let error as USBError where error == .disconnected {
                 guard reconnectAttempts < reconnectPolicy.maxAttempts else {
                     throw error
@@ -136,6 +160,39 @@ public final class InstallationCoordinator {
                 try await transport.connect()
                 log("Reconnected to Switch", level: .info)
             }
+        }
+    }
+
+    // MARK: - MTP Path
+
+    private func runMTPInstallation() async {
+        state = .connecting
+        log("Connecting to Switch (MTP)...", level: .info)
+
+        do {
+            state = .transferring
+
+            let files = queuedURLs.map { url -> (String, String, UInt64) in
+                let size = (try? FileManager.default.attributesOfItem(atPath: url.path)[.size] as? UInt64) ?? 0
+                return (url.path, url.lastPathComponent, size)
+            }
+
+            let installer = MTPInstaller(device: mtpDevice)
+            try await installer.install(files: files) { [weak self] fileName, sent, total in
+                Task { @MainActor in
+                    self?.progress.updateProgress(fileName: fileName, transferredBytes: sent)
+                }
+                return true
+            }
+
+            state = .complete
+            log("Installation complete!", level: .info)
+        } catch is CancellationError {
+            state = .idle
+            log("Installation cancelled", level: .warning)
+        } catch {
+            state = .error(error.localizedDescription)
+            log("Error: \(error.localizedDescription)", level: .error)
         }
     }
 

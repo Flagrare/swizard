@@ -73,6 +73,7 @@ final class ReconnectBehaviorTests: XCTestCase {
         let transport = AlwaysDisconnectTransport()
         let policy = ReconnectPolicy(maxAttempts: 2, baseDelay: 0)
         let coordinator = InstallationCoordinator(transport: transport, reconnectPolicy: policy)
+        coordinator.transportMode = .dbiBackend
 
         let url = try! createTempFile(name: "reconnect_test.nsp", content: Data(repeating: 0, count: 100))
         coordinator.queueFiles([url])
@@ -98,6 +99,7 @@ final class ReconnectBehaviorTests: XCTestCase {
         let transport = AlwaysDisconnectTransport()
         let policy = ReconnectPolicy.none
         let coordinator = InstallationCoordinator(transport: transport, reconnectPolicy: policy)
+        coordinator.transportMode = .dbiBackend
 
         let url = try! createTempFile(name: "no_reconnect.nsp", content: Data(repeating: 0, count: 100))
         coordinator.queueFiles([url])

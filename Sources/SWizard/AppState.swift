@@ -39,6 +39,16 @@ final class AppState {
         }
     }
 
+    /// Help text depends on the selected mode.
+    var installHelpText: String {
+        switch coordinator.transportMode {
+        case .dbiBackend:
+            "On your Switch, open DBI and select \"Run DBI backend\" before connecting USB."
+        case .mtp:
+            "On your Switch, open DBI and select \"Run MTP responder\" before connecting USB."
+        }
+    }
+
     func startMonitoring() {
         monitorTask?.cancel()
         monitorTask = Task {
@@ -58,7 +68,6 @@ final class AppState {
         monitorTask = nil
     }
 
-    /// Call this whenever coordinator state changes to keep the mutex flag in sync.
     func updateTransferFlag() {
         _isTransferActive.value = isTransferActive
     }
