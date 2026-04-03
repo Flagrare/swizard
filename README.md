@@ -60,6 +60,20 @@ DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift test
 .build/debug/SWizard
 ```
 
+## Releasing via GitHub Actions
+
+You can publish a specific version from the **Release** workflow:
+
+1. Open **Actions** -> **Release** -> **Run workflow**
+2. Set `version` in `vMAJOR.MINOR.PATCH` format (example: `v1.2.3`) or prerelease format (example: `v0.1.0-alpha`)
+3. Choose whether to mark it as `latest`
+
+The workflow will:
+
+- Create and push the tag if it does not exist yet
+- Build a macOS arm64 release binary
+- Upload `SWizard-<version>-macos-arm64.tar.gz` to a GitHub Release
+
 ## Usage
 
 1. Open DBI on your Switch → select **"Run DBI backend"** (not MTP responder)

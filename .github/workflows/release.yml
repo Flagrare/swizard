@@ -1,0 +1,69 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to release (example: v1.2.3)"
+        required: true
+      make_latest:
+        description: "Mark this release as latest"
+        required: true
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    runs-on: macos-14
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Validate version input
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          if [[ ! "$VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
+            echo "Version must match vMAJOR.MINOR.PATCH or prerelease format (example: v1.2.3 or v1.2.3-alpha.1)"
+            exit 1
+          fi
+
+      - name: Ensure tag exists on remote
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          if git rev-parse "$VERSION" >/dev/null 2>&1; then
+            echo "Tag $VERSION already exists"
+          else
+            git tag "$VERSION"
+            git push origin "$VERSION"
+          fi
+
+      - name: Install build dependency
+        run: brew install libusb
+
+      - name: Build and package release binary
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          BIN_PATH=$(swift build -c release --show-bin-path)
+          mkdir -p dist
+          cp "$BIN_PATH/SWizard" "dist/SWizard"
+          chmod +x "dist/SWizard"
+          tar -C dist -czf "SWizard-${VERSION}-macos-arm64.tar.gz" SWizard
+
+      - name: Publish GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ inputs.version }}
+          name: SWizard ${{ inputs.version }}
+          generate_release_notes: true
+          prerelease: ${{ contains(inputs.version, '-') }}
+          make_latest: ${{ inputs.make_latest }}
+          files: SWizard-${{ inputs.version }}-macos-arm64.tar.gz
