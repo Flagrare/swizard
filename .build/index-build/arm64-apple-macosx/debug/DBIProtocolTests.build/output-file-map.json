@@ -1,0 +1,12 @@
+{
+  "": {
+    "swift-dependencies": "/Users/storylight/Dev/swizard/.build/index-build/arm64-apple-macosx/debug/DBIProtocolTests.build/master.swiftdeps"
+  },
+  "/Users/storylight/Dev/swizard/Tests/DBIProtocolTests/DBIHeaderTests.swift": {
+    "dependencies": "/Users/storylight/Dev/swizard/.build/index-build/arm64-apple-macosx/debug/DBIProtocolTests.build/DBIHeaderTests.d",
+    "object": "/Users/storylight/Dev/swizard/.build/index-build/arm64-apple-macosx/debug/DBIProtocolTests.build/DBIHeaderTests.swift.o",
+    "swiftmodule": "/Users/storylight/Dev/swizard/.build/index-build/arm64-apple-macosx/debug/DBIProtocolTests.build/DBIHeaderTests~partial.swiftmodule",
+    "swift-dependencies": "/Users/storylight/Dev/swizard/.build/index-build/arm64-apple-macosx/debug/DBIProtocolTests.build/DBIHeaderTests.swiftdeps",
+    "diagnostics": "/Users/storylight/Dev/swizard/.build/index-build/arm64-apple-macosx/debug/DBIProtocolTests.build/DBIHeaderTests.dia"
+  }
+}

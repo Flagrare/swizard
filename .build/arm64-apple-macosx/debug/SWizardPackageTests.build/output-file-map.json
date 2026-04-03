@@ -1,0 +1,12 @@
+{
+  "": {
+    "swift-dependencies": "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/SWizardPackageTests.build/master.swiftdeps"
+  },
+  "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/SWizardPackageTests.derived/runner.swift": {
+    "dependencies": "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/SWizardPackageTests.build/runner.d",
+    "object": "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/SWizardPackageTests.build/runner.swift.o",
+    "swiftmodule": "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/SWizardPackageTests.build/runner~partial.swiftmodule",
+    "swift-dependencies": "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/SWizardPackageTests.build/runner.swiftdeps",
+    "diagnostics": "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/SWizardPackageTests.build/runner.dia"
+  }
+}

@@ -1,0 +1,1472 @@
+{
+  "builtTestProducts" : [
+    {
+      "binaryPath" : "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/SWizardPackageTests.xctest/Contents/MacOS/SWizardPackageTests",
+      "packagePath" : "/Users/storylight/Dev/swizard",
+      "productName" : "SWizardPackageTests"
+    }
+  ],
+  "copyCommands" : {
+
+  },
+  "explicitTargetDependencyImportCheckingMode" : {
+    "none" : {
+
+    }
+  },
+  "generatedSourceTargetSet" : [
+
+  ],
+  "pluginDescriptions" : [
+
+  ],
+  "swiftCommands" : {
+    "C.DBIProtocol-arm64-apple-macosx26.0-debug.module" : {
+      "executable" : "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+      "fileList" : "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/DBIProtocol.build/sources",
+      "importPath" : "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/Modules",
+      "inputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/storylight/Dev/swizard/Sources/DBIProtocol/DBIConstants.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/swift-version--58304C5D6DBC2206.txt"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/DBIProtocol.build/sources"
+        }
+      ],
+      "isLibrary" : true,
+      "moduleName" : "DBIProtocol",
+      "moduleOutputPath" : "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/Modules/DBIProtocol.swiftmodule",
+      "objects" : [
+        "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/DBIProtocol.build/DBIConstants.swift.o"
+      ],
+      "otherArguments" : [
+        "-target",
+        "arm64-apple-macosx15.0",
+        "-incremental",
+        "-enable-batch-mode",
+        "-serialize-diagnostics",
+        "-index-store-path",
+        "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/index/store",
+        "-Onone",
+        "-enable-testing",
+        "-j12",
+        "-DSWIFT_PACKAGE",
+        "-DDEBUG",
+        "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+        "-module-cache-path",
+        "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/ModuleCache",
+        "-parseable-output",
+        "-parse-as-library",
+        "-emit-objc-header",
+        "-emit-objc-header-path",
+        "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/DBIProtocol.build/include/DBIProtocol-Swift.h",
+        "-swift-version",
+        "6",
+        "-plugin-path",
+        "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
+        "-sdk",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk",
+        "-F",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+        "-F",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+        "-I",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+        "-L",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+        "-g",
+        "-Xcc",
+        "-isysroot",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk",
+        "-Xcc",
+        "-F",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+        "-Xcc",
+        "-F",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+        "-Xcc",
+        "-fPIC",
+        "-Xcc",
+        "-g",
+        "-package-name",
+        "swizard"
+      ],
+      "outputFileMapPath" : "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/DBIProtocol.build/output-file-map.json",
+      "outputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/DBIProtocol.build/DBIConstants.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/Modules/DBIProtocol.swiftmodule"
+        }
+      ],
+      "prepareForIndexing" : false,
+      "sources" : [
+        "/Users/storylight/Dev/swizard/Sources/DBIProtocol/DBIConstants.swift"
+      ],
+      "tempsPath" : "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/DBIProtocol.build",
+      "wholeModuleOptimization" : false
+    },
+    "C.DBIProtocolTests-arm64-apple-macosx26.0-debug.module" : {
+      "executable" : "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+      "fileList" : "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/DBIProtocolTests.build/sources",
+      "importPath" : "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/Modules",
+      "inputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/storylight/Dev/swizard/Tests/DBIProtocolTests/DBIHeaderTests.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/swift-version--58304C5D6DBC2206.txt"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/Modules/DBIProtocol.swiftmodule"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/DBIProtocolTests.build/sources"
+        }
+      ],
+      "isLibrary" : true,
+      "moduleName" : "DBIProtocolTests",
+      "moduleOutputPath" : "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/Modules/DBIProtocolTests.swiftmodule",
+      "objects" : [
+        "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/DBIProtocolTests.build/DBIHeaderTests.swift.o"
+      ],
+      "otherArguments" : [
+        "-target",
+        "arm64-apple-macosx15.0",
+        "-incremental",
+        "-enable-batch-mode",
+        "-serialize-diagnostics",
+        "-index-store-path",
+        "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/index/store",
+        "-Onone",
+        "-enable-testing",
+        "-Xfrontend",
+        "-enable-cross-import-overlays",
+        "-j12",
+        "-DSWIFT_PACKAGE",
+        "-DDEBUG",
+        "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+        "-module-cache-path",
+        "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/ModuleCache",
+        "-parseable-output",
+        "-parse-as-library",
+        "-swift-version",
+        "6",
+        "-plugin-path",
+        "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
+        "-sdk",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk",
+        "-F",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+        "-F",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+        "-I",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+        "-L",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+        "-g",
+        "-Xcc",
+        "-isysroot",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk",
+        "-Xcc",
+        "-F",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+        "-Xcc",
+        "-F",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+        "-Xcc",
+        "-fPIC",
+        "-Xcc",
+        "-g",
+        "-package-name",
+        "swizard"
+      ],
+      "outputFileMapPath" : "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/DBIProtocolTests.build/output-file-map.json",
+      "outputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/DBIProtocolTests.build/DBIHeaderTests.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/Modules/DBIProtocolTests.swiftmodule"
+        }
+      ],
+      "prepareForIndexing" : false,
+      "sources" : [
+        "/Users/storylight/Dev/swizard/Tests/DBIProtocolTests/DBIHeaderTests.swift"
+      ],
+      "tempsPath" : "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/DBIProtocolTests.build",
+      "wholeModuleOptimization" : false
+    },
+    "C.Installer-arm64-apple-macosx26.0-debug.module" : {
+      "executable" : "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+      "fileList" : "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/Installer.build/sources",
+      "importPath" : "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/Modules",
+      "inputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/storylight/Dev/swizard/Sources/Installer/InstallError.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/swift-version--58304C5D6DBC2206.txt"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/Modules/USBTransport.swiftmodule"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/Modules/DBIProtocol.swiftmodule"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/Installer.build/sources"
+        }
+      ],
+      "isLibrary" : true,
+      "moduleName" : "Installer",
+      "moduleOutputPath" : "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/Modules/Installer.swiftmodule",
+      "objects" : [
+        "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/Installer.build/InstallError.swift.o"
+      ],
+      "otherArguments" : [
+        "-target",
+        "arm64-apple-macosx15.0",
+        "-incremental",
+        "-enable-batch-mode",
+        "-serialize-diagnostics",
+        "-index-store-path",
+        "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/index/store",
+        "-Onone",
+        "-enable-testing",
+        "-j12",
+        "-DSWIFT_PACKAGE",
+        "-DDEBUG",
+        "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+        "-Xcc",
+        "-fmodule-map-file=/Users/storylight/Dev/swizard/Sources/CLibUSB/module.modulemap",
+        "-I/opt/homebrew/Cellar/libusb/1.0.29/include/libusb-1.0",
+        "-module-cache-path",
+        "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/ModuleCache",
+        "-parseable-output",
+        "-parse-as-library",
+        "-emit-objc-header",
+        "-emit-objc-header-path",
+        "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/Installer.build/include/Installer-Swift.h",
+        "-swift-version",
+        "6",
+        "-plugin-path",
+        "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
+        "-sdk",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk",
+        "-F",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+        "-F",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+        "-I",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+        "-L",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+        "-g",
+        "-Xcc",
+        "-isysroot",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk",
+        "-Xcc",
+        "-F",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+        "-Xcc",
+        "-F",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+        "-Xcc",
+        "-fPIC",
+        "-Xcc",
+        "-g",
+        "-package-name",
+        "swizard"
+      ],
+      "outputFileMapPath" : "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/Installer.build/output-file-map.json",
+      "outputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/Installer.build/InstallError.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/Modules/Installer.swiftmodule"
+        }
+      ],
+      "prepareForIndexing" : false,
+      "sources" : [
+        "/Users/storylight/Dev/swizard/Sources/Installer/InstallError.swift"
+      ],
+      "tempsPath" : "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/Installer.build",
+      "wholeModuleOptimization" : false
+    },
+    "C.InstallerTests-arm64-apple-macosx26.0-debug.module" : {
+      "executable" : "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+      "fileList" : "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/InstallerTests.build/sources",
+      "importPath" : "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/Modules",
+      "inputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/storylight/Dev/swizard/Tests/InstallerTests/FileServerTests.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/swift-version--58304C5D6DBC2206.txt"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/Modules/Installer.swiftmodule"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/InstallerTests.build/sources"
+        }
+      ],
+      "isLibrary" : true,
+      "moduleName" : "InstallerTests",
+      "moduleOutputPath" : "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/Modules/InstallerTests.swiftmodule",
+      "objects" : [
+        "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/InstallerTests.build/FileServerTests.swift.o"
+      ],
+      "otherArguments" : [
+        "-target",
+        "arm64-apple-macosx15.0",
+        "-incremental",
+        "-enable-batch-mode",
+        "-serialize-diagnostics",
+        "-index-store-path",
+        "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/index/store",
+        "-Onone",
+        "-enable-testing",
+        "-Xfrontend",
+        "-enable-cross-import-overlays",
+        "-j12",
+        "-DSWIFT_PACKAGE",
+        "-DDEBUG",
+        "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+        "-Xcc",
+        "-fmodule-map-file=/Users/storylight/Dev/swizard/Sources/CLibUSB/module.modulemap",
+        "-I/opt/homebrew/Cellar/libusb/1.0.29/include/libusb-1.0",
+        "-module-cache-path",
+        "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/ModuleCache",
+        "-parseable-output",
+        "-parse-as-library",
+        "-swift-version",
+        "6",
+        "-plugin-path",
+        "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
+        "-sdk",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk",
+        "-F",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+        "-F",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+        "-I",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+        "-L",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+        "-g",
+        "-Xcc",
+        "-isysroot",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk",
+        "-Xcc",
+        "-F",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+        "-Xcc",
+        "-F",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+        "-Xcc",
+        "-fPIC",
+        "-Xcc",
+        "-g",
+        "-package-name",
+        "swizard"
+      ],
+      "outputFileMapPath" : "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/InstallerTests.build/output-file-map.json",
+      "outputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/InstallerTests.build/FileServerTests.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/Modules/InstallerTests.swiftmodule"
+        }
+      ],
+      "prepareForIndexing" : false,
+      "sources" : [
+        "/Users/storylight/Dev/swizard/Tests/InstallerTests/FileServerTests.swift"
+      ],
+      "tempsPath" : "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/InstallerTests.build",
+      "wholeModuleOptimization" : false
+    },
+    "C.SWizard-arm64-apple-macosx26.0-debug.module" : {
+      "executable" : "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+      "fileList" : "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/SWizard.build/sources",
+      "importPath" : "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/Modules",
+      "inputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/storylight/Dev/swizard/Sources/SWizard/SWizardApp.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/swift-version--58304C5D6DBC2206.txt"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/Modules/Installer.swiftmodule"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/SWizard.build/sources"
+        }
+      ],
+      "isLibrary" : false,
+      "moduleName" : "SWizard",
+      "moduleOutputPath" : "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/Modules/SWizard.swiftmodule",
+      "objects" : [
+        "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/SWizard.build/SWizardApp.swift.o"
+      ],
+      "otherArguments" : [
+        "-target",
+        "arm64-apple-macosx15.0",
+        "-incremental",
+        "-enable-batch-mode",
+        "-serialize-diagnostics",
+        "-index-store-path",
+        "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/index/store",
+        "-Onone",
+        "-enable-testing",
+        "-j12",
+        "-DSWIFT_PACKAGE",
+        "-DDEBUG",
+        "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+        "-Xcc",
+        "-fmodule-map-file=/Users/storylight/Dev/swizard/Sources/CLibUSB/module.modulemap",
+        "-I/opt/homebrew/Cellar/libusb/1.0.29/include/libusb-1.0",
+        "-module-cache-path",
+        "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/ModuleCache",
+        "-parseable-output",
+        "-Xfrontend",
+        "-entry-point-function-name",
+        "-Xfrontend",
+        "SWizard_main",
+        "-parse-as-library",
+        "-swift-version",
+        "6",
+        "-plugin-path",
+        "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
+        "-sdk",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk",
+        "-F",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+        "-F",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+        "-I",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+        "-L",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+        "-g",
+        "-Xcc",
+        "-isysroot",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk",
+        "-Xcc",
+        "-F",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+        "-Xcc",
+        "-F",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+        "-Xcc",
+        "-fPIC",
+        "-Xcc",
+        "-g",
+        "-package-name",
+        "swizard"
+      ],
+      "outputFileMapPath" : "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/SWizard.build/output-file-map.json",
+      "outputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/SWizard.build/SWizardApp.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/Modules/SWizard.swiftmodule"
+        }
+      ],
+      "prepareForIndexing" : false,
+      "sources" : [
+        "/Users/storylight/Dev/swizard/Sources/SWizard/SWizardApp.swift"
+      ],
+      "tempsPath" : "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/SWizard.build",
+      "wholeModuleOptimization" : false
+    },
+    "C.SWizardPackageTests-arm64-apple-macosx26.0-debug.module" : {
+      "executable" : "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+      "fileList" : "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/SWizardPackageTests.build/sources",
+      "importPath" : "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/Modules",
+      "inputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/SWizardPackageTests.derived/runner.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/swift-version--58304C5D6DBC2206.txt"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/Modules/InstallerTests.swiftmodule"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/Modules/DBIProtocolTests.swiftmodule"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/SWizardPackageTests.build/sources"
+        }
+      ],
+      "isLibrary" : true,
+      "moduleName" : "SWizardPackageTests",
+      "moduleOutputPath" : "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/Modules/SWizardPackageTests.swiftmodule",
+      "objects" : [
+        "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/SWizardPackageTests.build/runner.swift.o"
+      ],
+      "otherArguments" : [
+        "-target",
+        "arm64-apple-macosx15.0",
+        "-incremental",
+        "-enable-batch-mode",
+        "-serialize-diagnostics",
+        "-index-store-path",
+        "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/index/store",
+        "-Onone",
+        "-enable-testing",
+        "-Xfrontend",
+        "-enable-cross-import-overlays",
+        "-j12",
+        "-DSWIFT_PACKAGE",
+        "-DDEBUG",
+        "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+        "-Xcc",
+        "-fmodule-map-file=/Users/storylight/Dev/swizard/Sources/CLibUSB/module.modulemap",
+        "-I/opt/homebrew/Cellar/libusb/1.0.29/include/libusb-1.0",
+        "-module-cache-path",
+        "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/ModuleCache",
+        "-parseable-output",
+        "-parse-as-library",
+        "-emit-objc-header",
+        "-emit-objc-header-path",
+        "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/SWizardPackageTests.build/include/SWizardPackageTests-Swift.h",
+        "-plugin-path",
+        "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
+        "-sdk",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk",
+        "-F",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+        "-F",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+        "-I",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+        "-L",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+        "-g",
+        "-Xcc",
+        "-isysroot",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk",
+        "-Xcc",
+        "-F",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+        "-Xcc",
+        "-F",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+        "-Xcc",
+        "-fPIC",
+        "-Xcc",
+        "-g",
+        "-package-name",
+        "swizard"
+      ],
+      "outputFileMapPath" : "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/SWizardPackageTests.build/output-file-map.json",
+      "outputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/SWizardPackageTests.build/runner.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/Modules/SWizardPackageTests.swiftmodule"
+        }
+      ],
+      "prepareForIndexing" : false,
+      "sources" : [
+        "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/SWizardPackageTests.derived/runner.swift"
+      ],
+      "tempsPath" : "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/SWizardPackageTests.build",
+      "wholeModuleOptimization" : false
+    },
+    "C.USBTransport-arm64-apple-macosx26.0-debug.module" : {
+      "executable" : "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+      "fileList" : "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/USBTransport.build/sources",
+      "importPath" : "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/Modules",
+      "inputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/storylight/Dev/swizard/Sources/USBTransport/TransportProtocol.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/swift-version--58304C5D6DBC2206.txt"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/USBTransport.build/sources"
+        }
+      ],
+      "isLibrary" : true,
+      "moduleName" : "USBTransport",
+      "moduleOutputPath" : "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/Modules/USBTransport.swiftmodule",
+      "objects" : [
+        "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/USBTransport.build/TransportProtocol.swift.o"
+      ],
+      "otherArguments" : [
+        "-target",
+        "arm64-apple-macosx15.0",
+        "-incremental",
+        "-enable-batch-mode",
+        "-serialize-diagnostics",
+        "-index-store-path",
+        "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/index/store",
+        "-Onone",
+        "-enable-testing",
+        "-j12",
+        "-DSWIFT_PACKAGE",
+        "-DDEBUG",
+        "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+        "-Xcc",
+        "-fmodule-map-file=/Users/storylight/Dev/swizard/Sources/CLibUSB/module.modulemap",
+        "-I/opt/homebrew/Cellar/libusb/1.0.29/include/libusb-1.0",
+        "-module-cache-path",
+        "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/ModuleCache",
+        "-parseable-output",
+        "-parse-as-library",
+        "-emit-objc-header",
+        "-emit-objc-header-path",
+        "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/USBTransport.build/include/USBTransport-Swift.h",
+        "-swift-version",
+        "6",
+        "-plugin-path",
+        "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
+        "-sdk",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk",
+        "-F",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+        "-F",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+        "-I",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+        "-L",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+        "-g",
+        "-Xcc",
+        "-isysroot",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk",
+        "-Xcc",
+        "-F",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+        "-Xcc",
+        "-F",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+        "-Xcc",
+        "-fPIC",
+        "-Xcc",
+        "-g",
+        "-package-name",
+        "swizard"
+      ],
+      "outputFileMapPath" : "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/USBTransport.build/output-file-map.json",
+      "outputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/USBTransport.build/TransportProtocol.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/Modules/USBTransport.swiftmodule"
+        }
+      ],
+      "prepareForIndexing" : false,
+      "sources" : [
+        "/Users/storylight/Dev/swizard/Sources/USBTransport/TransportProtocol.swift"
+      ],
+      "tempsPath" : "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/USBTransport.build",
+      "wholeModuleOptimization" : false
+    }
+  },
+  "swiftFrontendCommands" : {
+
+  },
+  "swiftTargetScanArgs" : {
+    "DBIProtocol" : [
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+      "-module-name",
+      "DBIProtocol",
+      "-package-name",
+      "swizard",
+      "-c",
+      "/Users/storylight/Dev/swizard/Sources/DBIProtocol/DBIConstants.swift",
+      "-I",
+      "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/Modules",
+      "-target",
+      "arm64-apple-macosx15.0",
+      "-incremental",
+      "-enable-batch-mode",
+      "-serialize-diagnostics",
+      "-index-store-path",
+      "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/index/store",
+      "-Onone",
+      "-enable-testing",
+      "-j12",
+      "-DSWIFT_PACKAGE",
+      "-DDEBUG",
+      "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+      "-module-cache-path",
+      "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/ModuleCache",
+      "-parseable-output",
+      "-parse-as-library",
+      "-emit-objc-header",
+      "-emit-objc-header-path",
+      "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/DBIProtocol.build/include/DBIProtocol-Swift.h",
+      "-swift-version",
+      "6",
+      "-plugin-path",
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
+      "-sdk",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk",
+      "-F",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+      "-F",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+      "-I",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+      "-L",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+      "-g",
+      "-Xcc",
+      "-isysroot",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk",
+      "-Xcc",
+      "-F",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+      "-Xcc",
+      "-F",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+      "-Xcc",
+      "-fPIC",
+      "-Xcc",
+      "-g",
+      "-package-name",
+      "swizard",
+      "-driver-use-frontend-path",
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc"
+    ],
+    "DBIProtocolTests" : [
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+      "-module-name",
+      "DBIProtocolTests",
+      "-package-name",
+      "swizard",
+      "-c",
+      "/Users/storylight/Dev/swizard/Tests/DBIProtocolTests/DBIHeaderTests.swift",
+      "-I",
+      "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/Modules",
+      "-target",
+      "arm64-apple-macosx15.0",
+      "-incremental",
+      "-enable-batch-mode",
+      "-serialize-diagnostics",
+      "-index-store-path",
+      "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/index/store",
+      "-Onone",
+      "-enable-testing",
+      "-Xfrontend",
+      "-enable-cross-import-overlays",
+      "-j12",
+      "-DSWIFT_PACKAGE",
+      "-DDEBUG",
+      "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+      "-module-cache-path",
+      "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/ModuleCache",
+      "-parseable-output",
+      "-parse-as-library",
+      "-swift-version",
+      "6",
+      "-plugin-path",
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
+      "-sdk",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk",
+      "-F",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+      "-F",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+      "-I",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+      "-L",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+      "-g",
+      "-Xcc",
+      "-isysroot",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk",
+      "-Xcc",
+      "-F",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+      "-Xcc",
+      "-F",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+      "-Xcc",
+      "-fPIC",
+      "-Xcc",
+      "-g",
+      "-package-name",
+      "swizard",
+      "-driver-use-frontend-path",
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc"
+    ],
+    "Installer" : [
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+      "-module-name",
+      "Installer",
+      "-package-name",
+      "swizard",
+      "-c",
+      "/Users/storylight/Dev/swizard/Sources/Installer/InstallError.swift",
+      "-I",
+      "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/Modules",
+      "-target",
+      "arm64-apple-macosx15.0",
+      "-incremental",
+      "-enable-batch-mode",
+      "-serialize-diagnostics",
+      "-index-store-path",
+      "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/index/store",
+      "-Onone",
+      "-enable-testing",
+      "-j12",
+      "-DSWIFT_PACKAGE",
+      "-DDEBUG",
+      "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+      "-Xcc",
+      "-fmodule-map-file=/Users/storylight/Dev/swizard/Sources/CLibUSB/module.modulemap",
+      "-I/opt/homebrew/Cellar/libusb/1.0.29/include/libusb-1.0",
+      "-module-cache-path",
+      "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/ModuleCache",
+      "-parseable-output",
+      "-parse-as-library",
+      "-emit-objc-header",
+      "-emit-objc-header-path",
+      "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/Installer.build/include/Installer-Swift.h",
+      "-swift-version",
+      "6",
+      "-plugin-path",
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
+      "-sdk",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk",
+      "-F",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+      "-F",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+      "-I",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+      "-L",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+      "-g",
+      "-Xcc",
+      "-isysroot",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk",
+      "-Xcc",
+      "-F",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+      "-Xcc",
+      "-F",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+      "-Xcc",
+      "-fPIC",
+      "-Xcc",
+      "-g",
+      "-package-name",
+      "swizard",
+      "-driver-use-frontend-path",
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc"
+    ],
+    "InstallerTests" : [
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+      "-module-name",
+      "InstallerTests",
+      "-package-name",
+      "swizard",
+      "-c",
+      "/Users/storylight/Dev/swizard/Tests/InstallerTests/FileServerTests.swift",
+      "-I",
+      "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/Modules",
+      "-target",
+      "arm64-apple-macosx15.0",
+      "-incremental",
+      "-enable-batch-mode",
+      "-serialize-diagnostics",
+      "-index-store-path",
+      "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/index/store",
+      "-Onone",
+      "-enable-testing",
+      "-Xfrontend",
+      "-enable-cross-import-overlays",
+      "-j12",
+      "-DSWIFT_PACKAGE",
+      "-DDEBUG",
+      "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+      "-Xcc",
+      "-fmodule-map-file=/Users/storylight/Dev/swizard/Sources/CLibUSB/module.modulemap",
+      "-I/opt/homebrew/Cellar/libusb/1.0.29/include/libusb-1.0",
+      "-module-cache-path",
+      "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/ModuleCache",
+      "-parseable-output",
+      "-parse-as-library",
+      "-swift-version",
+      "6",
+      "-plugin-path",
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
+      "-sdk",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk",
+      "-F",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+      "-F",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+      "-I",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+      "-L",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+      "-g",
+      "-Xcc",
+      "-isysroot",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk",
+      "-Xcc",
+      "-F",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+      "-Xcc",
+      "-F",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+      "-Xcc",
+      "-fPIC",
+      "-Xcc",
+      "-g",
+      "-package-name",
+      "swizard",
+      "-driver-use-frontend-path",
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc"
+    ],
+    "SWizard" : [
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+      "-module-name",
+      "SWizard",
+      "-package-name",
+      "swizard",
+      "-c",
+      "/Users/storylight/Dev/swizard/Sources/SWizard/SWizardApp.swift",
+      "-I",
+      "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/Modules",
+      "-target",
+      "arm64-apple-macosx15.0",
+      "-incremental",
+      "-enable-batch-mode",
+      "-serialize-diagnostics",
+      "-index-store-path",
+      "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/index/store",
+      "-Onone",
+      "-enable-testing",
+      "-j12",
+      "-DSWIFT_PACKAGE",
+      "-DDEBUG",
+      "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+      "-Xcc",
+      "-fmodule-map-file=/Users/storylight/Dev/swizard/Sources/CLibUSB/module.modulemap",
+      "-I/opt/homebrew/Cellar/libusb/1.0.29/include/libusb-1.0",
+      "-module-cache-path",
+      "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/ModuleCache",
+      "-parseable-output",
+      "-Xfrontend",
+      "-entry-point-function-name",
+      "-Xfrontend",
+      "SWizard_main",
+      "-parse-as-library",
+      "-swift-version",
+      "6",
+      "-plugin-path",
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
+      "-sdk",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk",
+      "-F",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+      "-F",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+      "-I",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+      "-L",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+      "-g",
+      "-Xcc",
+      "-isysroot",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk",
+      "-Xcc",
+      "-F",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+      "-Xcc",
+      "-F",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+      "-Xcc",
+      "-fPIC",
+      "-Xcc",
+      "-g",
+      "-package-name",
+      "swizard",
+      "-driver-use-frontend-path",
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc"
+    ],
+    "SWizardPackageTests" : [
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+      "-module-name",
+      "SWizardPackageTests",
+      "-package-name",
+      "swizard",
+      "-c",
+      "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/SWizardPackageTests.derived/runner.swift",
+      "-I",
+      "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/Modules",
+      "-target",
+      "arm64-apple-macosx15.0",
+      "-incremental",
+      "-enable-batch-mode",
+      "-serialize-diagnostics",
+      "-index-store-path",
+      "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/index/store",
+      "-Onone",
+      "-enable-testing",
+      "-Xfrontend",
+      "-enable-cross-import-overlays",
+      "-j12",
+      "-DSWIFT_PACKAGE",
+      "-DDEBUG",
+      "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+      "-Xcc",
+      "-fmodule-map-file=/Users/storylight/Dev/swizard/Sources/CLibUSB/module.modulemap",
+      "-I/opt/homebrew/Cellar/libusb/1.0.29/include/libusb-1.0",
+      "-module-cache-path",
+      "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/ModuleCache",
+      "-parseable-output",
+      "-parse-as-library",
+      "-emit-objc-header",
+      "-emit-objc-header-path",
+      "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/SWizardPackageTests.build/include/SWizardPackageTests-Swift.h",
+      "-plugin-path",
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
+      "-sdk",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk",
+      "-F",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+      "-F",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+      "-I",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+      "-L",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+      "-g",
+      "-Xcc",
+      "-isysroot",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk",
+      "-Xcc",
+      "-F",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+      "-Xcc",
+      "-F",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+      "-Xcc",
+      "-fPIC",
+      "-Xcc",
+      "-g",
+      "-package-name",
+      "swizard",
+      "-driver-use-frontend-path",
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc"
+    ],
+    "USBTransport" : [
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+      "-module-name",
+      "USBTransport",
+      "-package-name",
+      "swizard",
+      "-c",
+      "/Users/storylight/Dev/swizard/Sources/USBTransport/TransportProtocol.swift",
+      "-I",
+      "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/Modules",
+      "-target",
+      "arm64-apple-macosx15.0",
+      "-incremental",
+      "-enable-batch-mode",
+      "-serialize-diagnostics",
+      "-index-store-path",
+      "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/index/store",
+      "-Onone",
+      "-enable-testing",
+      "-j12",
+      "-DSWIFT_PACKAGE",
+      "-DDEBUG",
+      "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+      "-Xcc",
+      "-fmodule-map-file=/Users/storylight/Dev/swizard/Sources/CLibUSB/module.modulemap",
+      "-I/opt/homebrew/Cellar/libusb/1.0.29/include/libusb-1.0",
+      "-module-cache-path",
+      "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/ModuleCache",
+      "-parseable-output",
+      "-parse-as-library",
+      "-emit-objc-header",
+      "-emit-objc-header-path",
+      "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/USBTransport.build/include/USBTransport-Swift.h",
+      "-swift-version",
+      "6",
+      "-plugin-path",
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
+      "-sdk",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk",
+      "-F",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+      "-F",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+      "-I",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+      "-L",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+      "-g",
+      "-Xcc",
+      "-isysroot",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk",
+      "-Xcc",
+      "-F",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+      "-Xcc",
+      "-F",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+      "-Xcc",
+      "-fPIC",
+      "-Xcc",
+      "-g",
+      "-package-name",
+      "swizard",
+      "-driver-use-frontend-path",
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc"
+    ]
+  },
+  "targetDependencyMap" : {
+    "DBIProtocol" : [
+
+    ],
+    "DBIProtocolTests" : [
+      "DBIProtocol"
+    ],
+    "Installer" : [
+      "DBIProtocol",
+      "USBTransport",
+      "CLibUSB"
+    ],
+    "InstallerTests" : [
+      "Installer",
+      "DBIProtocol",
+      "USBTransport",
+      "CLibUSB"
+    ],
+    "SWizard" : [
+      "Installer",
+      "DBIProtocol",
+      "USBTransport",
+      "CLibUSB"
+    ],
+    "SWizardPackageTests" : [
+      "DBIProtocolTests",
+      "InstallerTests",
+      "Installer",
+      "DBIProtocol",
+      "USBTransport",
+      "CLibUSB"
+    ],
+    "USBTransport" : [
+      "CLibUSB"
+    ]
+  },
+  "testDiscoveryCommands" : {
+
+  },
+  "testEntryPointCommands" : {
+    "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/SWizardPackageTests.derived/runner.swift" : {
+      "inputs" : [
+
+      ],
+      "outputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/SWizardPackageTests.derived/runner.swift"
+        }
+      ]
+    }
+  },
+  "traitConfiguration" : {
+    "default" : {
+
+    }
+  },
+  "writeCommands" : {
+    "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/DBIProtocol.build/sources" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<sources-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/storylight/Dev/swizard/Sources/DBIProtocol/DBIConstants.swift"
+        }
+      ],
+      "outputFilePath" : "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/DBIProtocol.build/sources"
+    },
+    "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/DBIProtocolTests.build/sources" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<sources-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/storylight/Dev/swizard/Tests/DBIProtocolTests/DBIHeaderTests.swift"
+        }
+      ],
+      "outputFilePath" : "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/DBIProtocolTests.build/sources"
+    },
+    "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/Installer.build/sources" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<sources-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/storylight/Dev/swizard/Sources/Installer/InstallError.swift"
+        }
+      ],
+      "outputFilePath" : "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/Installer.build/sources"
+    },
+    "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/InstallerTests.build/sources" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<sources-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/storylight/Dev/swizard/Tests/InstallerTests/FileServerTests.swift"
+        }
+      ],
+      "outputFilePath" : "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/InstallerTests.build/sources"
+    },
+    "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/SWizard-entitlement.plist" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<entitlement-plist>"
+        },
+        {
+          "kind" : "virtual",
+          "name" : "<com.apple.security.get-task-allow>"
+        }
+      ],
+      "outputFilePath" : "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/SWizard-entitlement.plist"
+    },
+    "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/SWizard.build/sources" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<sources-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/storylight/Dev/swizard/Sources/SWizard/SWizardApp.swift"
+        }
+      ],
+      "outputFilePath" : "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/SWizard.build/sources"
+    },
+    "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/SWizard.product/Objects.LinkFileList" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<link-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/DBIProtocol.build/DBIConstants.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/Installer.build/InstallError.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/SWizard.build/SWizardApp.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/USBTransport.build/TransportProtocol.swift.o"
+        }
+      ],
+      "outputFilePath" : "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/SWizard.product/Objects.LinkFileList"
+    },
+    "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/SWizardPackageTests.build/sources" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<sources-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/SWizardPackageTests.derived/runner.swift"
+        }
+      ],
+      "outputFilePath" : "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/SWizardPackageTests.build/sources"
+    },
+    "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/SWizardPackageTests.product/Objects.LinkFileList" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<link-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/DBIProtocol.build/DBIConstants.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/DBIProtocolTests.build/DBIHeaderTests.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/Installer.build/InstallError.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/InstallerTests.build/FileServerTests.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/SWizardPackageTests.build/runner.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/USBTransport.build/TransportProtocol.swift.o"
+        }
+      ],
+      "outputFilePath" : "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/SWizardPackageTests.product/Objects.LinkFileList"
+    },
+    "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/USBTransport.build/sources" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<sources-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/storylight/Dev/swizard/Sources/USBTransport/TransportProtocol.swift"
+        }
+      ],
+      "outputFilePath" : "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/USBTransport.build/sources"
+    },
+    "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/swift-version--58304C5D6DBC2206.txt" : {
+      "alwaysOutOfDate" : true,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<swift-get-version>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc"
+        }
+      ],
+      "outputFilePath" : "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/swift-version--58304C5D6DBC2206.txt"
+    }
+  }
+}

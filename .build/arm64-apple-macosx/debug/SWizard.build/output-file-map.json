@@ -1,0 +1,12 @@
+{
+  "": {
+    "swift-dependencies": "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/SWizard.build/master.swiftdeps"
+  },
+  "/Users/storylight/Dev/swizard/Sources/SWizard/SWizardApp.swift": {
+    "dependencies": "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/SWizard.build/SWizardApp.d",
+    "object": "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/SWizard.build/SWizardApp.swift.o",
+    "swiftmodule": "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/SWizard.build/SWizardApp~partial.swiftmodule",
+    "swift-dependencies": "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/SWizard.build/SWizardApp.swiftdeps",
+    "diagnostics": "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/SWizard.build/SWizardApp.dia"
+  }
+}

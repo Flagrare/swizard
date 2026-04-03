@@ -1,0 +1,12 @@
+{
+  "": {
+    "swift-dependencies": "/Users/storylight/Dev/swizard/.build/index-build/arm64-apple-macosx/debug/DBIProtocol.build/master.swiftdeps"
+  },
+  "/Users/storylight/Dev/swizard/Sources/DBIProtocol/DBIConstants.swift": {
+    "dependencies": "/Users/storylight/Dev/swizard/.build/index-build/arm64-apple-macosx/debug/DBIProtocol.build/DBIConstants.d",
+    "object": "/Users/storylight/Dev/swizard/.build/index-build/arm64-apple-macosx/debug/DBIProtocol.build/DBIConstants.swift.o",
+    "swiftmodule": "/Users/storylight/Dev/swizard/.build/index-build/arm64-apple-macosx/debug/DBIProtocol.build/DBIConstants~partial.swiftmodule",
+    "swift-dependencies": "/Users/storylight/Dev/swizard/.build/index-build/arm64-apple-macosx/debug/DBIProtocol.build/DBIConstants.swiftdeps",
+    "diagnostics": "/Users/storylight/Dev/swizard/.build/index-build/arm64-apple-macosx/debug/DBIProtocol.build/DBIConstants.dia"
+  }
+}
