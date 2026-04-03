@@ -3,6 +3,6 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
-"$ROOT_DIR/scripts/build-app.sh"
+"$ROOT_DIR/scripts/build-app.sh" --install
 
-open "$ROOT_DIR/build"
+open "/Applications/SWizard.app"

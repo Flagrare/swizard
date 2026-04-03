@@ -1,8 +1,20 @@
-# SWizard
+
+<table>
+  <tr>
+    <td width="84" valign="middle">
+      <img src="Assets/logo.png" alt="SWizard logo" width="72" />
+    </td>
+    <td valign="middle">
+      <h1>SWizard</h1>
+    </td>
+  </tr>
+</table>
 
 Native macOS app for installing Nintendo Switch games via USB — bypassing macOS Tahoe's broken MTP protocol.
 
 SWizard speaks DBI's USB backend protocol directly over libusb, so you never have to fight with OpenMTP, Android File Transfer, or MTP again.
+
+![SWizard](./Assets/swizard.gif)
 
 ## Why
 
@@ -64,10 +76,10 @@ DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift test
 
 If you cloned this repo and want a normal `.app` you can double-click:
 
-1. Run `Build-SWizard.command` (builds `build/SWizard.app`)
-2. Run `Install-SWizard.command` (copies app to `/Applications` and opens it)
+1. Run `Build-SWizard.command` (builds and installs `/Applications/SWizard.app`, replacing existing app)
+2. Open SWizard from Applications/Finder
 
-After that, launch SWizard from Applications/Finder like any other macOS app.
+If you only want to build without installing, run `scripts/build-app.sh`.
 
 To regenerate the app icon asset used by the bundle, run `scripts/generate-icon.sh`.
 
