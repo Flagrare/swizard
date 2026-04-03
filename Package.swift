@@ -21,15 +21,28 @@ let package = Package(
             dependencies: ["CLibUSB", "DBIProtocol"]
         ),
 
+        // C Bridge — wraps libmtp for Swift import
+        .systemLibrary(
+            name: "CLibMTP",
+            pkgConfig: "libmtp",
+            providers: [.brew(["libmtp"])]
+        ),
+
         // Domain — DBI protocol encode/decode and command handling
         .target(
             name: "DBIProtocol"
         ),
 
-        // Orchestration — wires protocol + USB + file serving
+        // Infrastructure — MTP device communication
+        .target(
+            name: "MTPTransport",
+            dependencies: ["CLibMTP", "DBIProtocol"]
+        ),
+
+        // Orchestration — wires protocol + USB + MTP + file serving
         .target(
             name: "Installer",
-            dependencies: ["USBTransport", "DBIProtocol"]
+            dependencies: ["USBTransport", "DBIProtocol", "MTPTransport"]
         ),
 
         // Presentation — SwiftUI app
@@ -50,6 +63,10 @@ let package = Package(
         .testTarget(
             name: "InstallerTests",
             dependencies: ["Installer"]
+        ),
+        .testTarget(
+            name: "MTPTransportTests",
+            dependencies: ["MTPTransport", "DBIProtocol"]
         ),
         .testTarget(
             name: "SWizardTests",
