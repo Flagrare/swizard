@@ -54,7 +54,7 @@ let package = Package(
         // Orchestration — wires protocol + USB + MTP + Network + file serving
         .target(
             name: "Installer",
-            dependencies: ["USBTransport", "DBIProtocol", "MTPTransport", "NetworkTransport"]
+            dependencies: ["USBTransport", "DBIProtocol", "MTPTransport", "NativeMTPTransport", "NetworkTransport"]
         ),
 
         // Presentation — SwiftUI app

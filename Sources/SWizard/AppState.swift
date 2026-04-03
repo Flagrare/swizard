@@ -2,6 +2,8 @@ import Foundation
 import os
 import Installer
 import USBTransport
+import NativeMTPTransport
+import DBIProtocol
 
 protocol PreferencesStore {
     func bool(forKey defaultName: String) -> Bool
@@ -78,6 +80,29 @@ final class AppState {
     func dismissInstallHelp() {
         showInstallHelp = false
         preferences.set(true, forKey: Self.installHelpDismissedKey)
+    }
+
+    // MARK: - MTP Connection Test
+
+    var mtpTestResult: String?
+
+    func testMTPConnection() {
+        mtpTestResult = "Testing..."
+        Task {
+            let adapter = IOUSBHostAdapter()
+            do {
+                try await adapter.open(
+                    vendorID: NintendoSwitchUSB.vendorID,
+                    productID: NintendoSwitchUSB.mtpProductID
+                )
+                await adapter.close()
+                mtpTestResult = "SUCCESS — DeviceSeize worked! IOUSBHost claimed the Switch."
+                // logged in mtpTestResult
+            } catch {
+                mtpTestResult = "FAILED — \(error.localizedDescription)"
+                // logged in mtpTestResult
+            }
+        }
     }
 }
 

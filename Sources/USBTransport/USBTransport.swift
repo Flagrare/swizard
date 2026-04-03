@@ -8,9 +8,9 @@ import DBIProtocol
 public final class USBTransport: TransportProtocol, @unchecked Sendable {
     private let usbQueue = DispatchQueue(label: "com.swizard.usb.\(UUID().uuidString)", qos: .userInitiated)
 
-    // Nintendo Switch USB identifiers
-    static let vendorID: UInt16 = 0x057E
-    static let productID: UInt16 = 0x3000
+    // Nintendo Switch USB identifiers (DBI backend mode)
+    static let vendorID = NintendoSwitchUSB.vendorID
+    static let productID = NintendoSwitchUSB.backendProductID
 
     private var context: OpaquePointer?
     private var handle: OpaquePointer?

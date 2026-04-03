@@ -99,21 +99,28 @@ public final class IOUSBHostAdapter: USBBulkTransferProtocol, @unchecked Sendabl
         let device = try openDevice(service: deviceService)
         self.hostDevice = device
 
-        // Step 3: Find and open the first interface child service
+        // Step 3: Configure device to expose interfaces, then find and claim one
+        try device.__configure(withValue: 1, matchInterfaces: true)
+
+        // Brief delay for interface matching
+        Thread.sleep(forTimeInterval: 0.5)
+
+        // Step 4: Find and open the first interface child service
         let interfaceService = try findInterfaceService(deviceService: deviceService)
         defer { IOObjectRelease(interfaceService) }
 
         let iface = try openInterface(service: interfaceService)
         self.hostInterface = iface
 
-        // Step 4: Find bulk endpoints and create pipes
+        // Step 5: Find bulk endpoints and create pipes
         try findBulkEndpoints(interface: iface)
     }
 
     private func findDeviceService(vendorID: UInt16, productID: UInt16) throws -> io_service_t {
-        let matching = IOServiceMatching(kIOUSBDeviceClassName) as NSMutableDictionary
-        matching[kUSBVendorID] = vendorID
-        matching[kUSBProductID] = productID
+        // Use IOUSBHostDevice (modern macOS), not kIOUSBDeviceClassName (legacy)
+        let matching = IOServiceMatching("IOUSBHostDevice") as NSMutableDictionary
+        matching["idVendor"] = vendorID
+        matching["idProduct"] = productID
 
         var iterator: io_iterator_t = 0
         guard IOServiceGetMatchingServices(kIOMainPortDefault, matching, &iterator) == KERN_SUCCESS else {
@@ -151,7 +158,6 @@ public final class IOUSBHostAdapter: USBBulkTransferProtocol, @unchecked Sendabl
     }
 
     private func findInterfaceService(deviceService: io_service_t) throws -> io_service_t {
-        let matching = IOServiceMatching(kIOUSBInterfaceClassName) as CFDictionary
         var iterator: io_iterator_t = 0
 
         guard IORegistryEntryGetChildIterator(deviceService, kIOServicePlane, &iterator) == KERN_SUCCESS else {
@@ -159,12 +165,12 @@ public final class IOUSBHostAdapter: USBBulkTransferProtocol, @unchecked Sendabl
         }
         defer { IOObjectRelease(iterator) }
 
-        // Find first interface child
+        // Find first IOUSBHostInterface child
         while true {
             let child = IOIteratorNext(iterator)
             guard child != 0 else { break }
 
-            if IOObjectConformsTo(child, kIOUSBInterfaceClassName) != 0 {
+            if IOObjectConformsTo(child, "IOUSBHostInterface") != 0 {
                 return child
             }
             IOObjectRelease(child)

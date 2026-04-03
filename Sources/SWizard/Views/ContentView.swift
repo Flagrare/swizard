@@ -44,6 +44,10 @@ struct ContentView: View {
                 mode: appState.coordinator.transportMode
             )
 
+            if appState.coordinator.transportMode == .mtp {
+                mtpTestSection
+            }
+
             if appState.showInstallHelp {
                 installHelpBanner
             }
@@ -86,6 +90,28 @@ struct ContentView: View {
         .padding(.horizontal)
         .padding(.vertical, 8)
         .disabled(appState.isTransferActive)
+    }
+
+    // MARK: - MTP Test
+
+    private var mtpTestSection: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack {
+                Button("Test MTP Connection") {
+                    appState.testMTPConnection()
+                }
+                .buttonStyle(.bordered)
+                .font(.caption)
+
+                if let result = appState.mtpTestResult {
+                    Text(result)
+                        .font(.caption2)
+                        .foregroundStyle(result.contains("SUCCESS") ? .green : result.contains("Testing") ? .secondary : .red)
+                }
+            }
+        }
+        .padding(.horizontal)
+        .padding(.vertical, 4)
     }
 
     // MARK: - Help Banner
