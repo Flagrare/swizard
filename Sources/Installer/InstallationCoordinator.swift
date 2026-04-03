@@ -7,11 +7,12 @@ import USBTransport
 @Observable
 @MainActor
 public final class InstallationCoordinator {
-    public enum State: Sendable {
+    public enum State: Sendable, Equatable {
         case idle
         case connecting
         case connected
         case transferring
+        case reconnecting(attempt: Int)
         case complete
         case error(String)
     }
@@ -24,10 +25,15 @@ public final class InstallationCoordinator {
     private let fileServer = FileServer()
     private let session: DBISession
     private let sessionDelegateAdapter: SessionDelegateAdapter
+    private let reconnectPolicy: ReconnectPolicy
     private var installTask: Task<Void, Never>?
 
-    public init(transport: (any TransportProtocol)? = nil) {
+    public init(
+        transport: (any TransportProtocol)? = nil,
+        reconnectPolicy: ReconnectPolicy = .default
+    ) {
         self.transport = transport ?? USBTransport().withRetry()
+        self.reconnectPolicy = reconnectPolicy
         let adapter = SessionDelegateAdapter()
         self.sessionDelegateAdapter = adapter
         self.session = DBISession()
@@ -50,7 +56,6 @@ public final class InstallationCoordinator {
             return
         }
 
-        // Wire delegate callbacks to self (MainActor)
         sessionDelegateAdapter.onLog = { [weak self] message, level in
             Task { @MainActor in self?.log(message, level: level) }
         }
@@ -87,9 +92,7 @@ public final class InstallationCoordinator {
             state = .connected
             log("Connected to Switch", level: .info)
 
-            state = .transferring
-
-            try await session.run(transport: transport, fileServer: fileServer)
+            try await runSessionWithReconnect()
 
             state = .complete
             log("Installation complete!", level: .info)
@@ -103,6 +106,35 @@ public final class InstallationCoordinator {
 
         try? await transport.disconnect()
         installTask = nil
+    }
+
+    private func runSessionWithReconnect() async throws {
+        var reconnectAttempts = 0
+
+        while true {
+            do {
+                state = .transferring
+                try await session.run(transport: transport, fileServer: fileServer)
+                return // Session completed normally (EXIT received)
+            } catch let error as USBError where error == .disconnected {
+                guard reconnectAttempts < reconnectPolicy.maxAttempts else {
+                    throw error
+                }
+
+                reconnectAttempts += 1
+                state = .reconnecting(attempt: reconnectAttempts)
+                log("Connection lost. Reconnecting (\(reconnectAttempts)/\(reconnectPolicy.maxAttempts))...", level: .warning)
+
+                try? await transport.disconnect()
+
+                if reconnectPolicy.baseDelay > 0 {
+                    try await Task.sleep(for: .seconds(reconnectPolicy.baseDelay))
+                }
+
+                try await transport.connect()
+                log("Reconnected to Switch", level: .info)
+            }
+        }
     }
 
     func log(_ message: String, level: LogLevel = .info) {
@@ -126,8 +158,6 @@ public struct LogEntry: Identifiable, Sendable {
 
 // MARK: - SessionDelegateAdapter
 
-/// Bridges DBISessionDelegate (called from background) to MainActor coordinator.
-/// Uses closures to avoid direct cross-actor references.
 final class SessionDelegateAdapter: DBISessionDelegate, @unchecked Sendable {
     var onLog: ((String, LogLevel) -> Void)?
     var onFileChunk: ((String, UInt32, UInt64) -> Void)?

@@ -125,6 +125,19 @@ struct ContentView: View {
                 .foregroundStyle(.red)
             }
 
+        case .reconnecting(let attempt):
+            HStack(spacing: 8) {
+                ProgressView().controlSize(.small)
+                Text("Reconnecting (\(attempt))...")
+                    .foregroundStyle(.orange)
+
+                Button("Cancel") {
+                    appState.coordinator.cancel()
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(.red)
+            }
+
         case .complete:
             Label("Complete!", systemImage: "checkmark.circle.fill")
                 .foregroundStyle(.green)
