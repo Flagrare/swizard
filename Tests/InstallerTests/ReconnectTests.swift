@@ -79,8 +79,8 @@ final class ReconnectBehaviorTests: XCTestCase {
         coordinator.queueFiles([url])
         coordinator.startInstallation()
 
-        // Wait for the coordinator to finish
-        try? await Task.sleep(for: .seconds(0.5))
+        // Wait for the coordinator to finish (reconnect loop needs time)
+        try? await Task.sleep(for: .seconds(2.0))
 
         if case .error = coordinator.state {
             // Expected: error after exhausting reconnects

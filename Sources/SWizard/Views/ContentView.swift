@@ -4,6 +4,16 @@ import Installer
 struct ContentView: View {
     @Bindable var appState: AppState
 
+    /// USB modes require a connected device; Network mode doesn't.
+    private var installRequiresDevice: Bool {
+        switch appState.coordinator.transportMode {
+        case .dbiBackend, .mtp:
+            return !appState.isDeviceConnected
+        case .network:
+            return false
+        }
+    }
+
     var body: some View {
         HSplitView {
             leftPanel
@@ -162,7 +172,7 @@ struct ContentView: View {
                 appState.coordinator.startInstallation()
             }
             .buttonStyle(.borderedProminent)
-            .disabled(appState.coordinator.progress.files.isEmpty)
+            .disabled(appState.coordinator.progress.files.isEmpty || installRequiresDevice)
 
         case .connecting:
             HStack(spacing: 8) {

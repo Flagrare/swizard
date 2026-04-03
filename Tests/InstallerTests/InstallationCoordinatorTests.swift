@@ -157,6 +157,108 @@ final class InstallationCoordinatorTests: XCTestCase {
         XCTAssertEqual(coordinator.transportMode, .network)
     }
 
+    // MARK: - UX Journey: MTP connecting state visible before transferring
+
+    @MainActor
+    func testMTPModePassesThroughConnectingState() async {
+        let mockMTP = MockMTPDevice()
+        let coordinator = InstallationCoordinator(transport: IdleMockTransport(), mtpDevice: mockMTP)
+        coordinator.transportMode = .mtp
+
+        let url = try! createTempFile(name: "mtp_state.nsp", content: Data(repeating: 0, count: 10))
+        coordinator.queueFiles([url])
+        coordinator.startInstallation()
+
+        // Give the task a chance to start
+        try? await Task.sleep(for: .seconds(0.1))
+
+        // Should have logged the connecting message (proves .connecting was hit)
+        XCTAssertTrue(coordinator.logs.contains(where: { $0.message.contains("Connecting to Switch (MTP)") }))
+        cleanup(url)
+    }
+
+    // MARK: - UX Journey: cancel stops network server immediately
+
+    @MainActor
+    func testCancelClearsNetworkInfo() async {
+        let coordinator = InstallationCoordinator(transport: IdleMockTransport())
+        coordinator.transportMode = .network
+
+        let url = try! createTempFile(name: "net_cancel.nsp", content: Data(repeating: 0, count: 10))
+        coordinator.queueFiles([url])
+        coordinator.startInstallation()
+
+        try? await Task.sleep(for: .seconds(0.3))
+
+        coordinator.cancel()
+
+        // networkInfo should be cleared immediately
+        XCTAssertNil(coordinator.networkInfo)
+        cleanup(url)
+    }
+
+    // MARK: - UX Journey: network mode shows server info
+
+    @MainActor
+    func testNetworkModeShowsServerInfo() async {
+        let coordinator = InstallationCoordinator(transport: IdleMockTransport())
+        coordinator.transportMode = .network
+
+        let url = try! createTempFile(name: "net_info.nsp", content: Data(repeating: 0, count: 10))
+        coordinator.queueFiles([url])
+        coordinator.startInstallation()
+
+        try? await Task.sleep(for: .seconds(0.5))
+
+        // Should have networkInfo set (IP:port)
+        XCTAssertNotNil(coordinator.networkInfo)
+        XCTAssertTrue(coordinator.networkInfo?.contains(":5000") ?? false)
+
+        coordinator.cancel()
+        cleanup(url)
+    }
+
+    // MARK: - UX Journey: MTP retries on transient error
+
+    @MainActor
+    func testMTPModeRetriesOnTransientError() async {
+        let mockMTP = RetryableMockMTPDevice(failCount: 1)
+        let coordinator = InstallationCoordinator(transport: IdleMockTransport(), mtpDevice: mockMTP)
+        coordinator.transportMode = .mtp
+
+        let url = try! createTempFile(name: "mtp_retry.nsp", content: Data(repeating: 0, count: 10))
+        coordinator.queueFiles([url])
+        coordinator.startInstallation()
+
+        try? await Task.sleep(for: .seconds(2.0))
+
+        // Should have retried and succeeded
+        XCTAssertEqual(coordinator.state, .complete)
+        XCTAssertTrue(coordinator.logs.contains(where: { $0.message.contains("retrying") }))
+        cleanup(url)
+    }
+
+    // MARK: - UX Journey: reset during transfer
+
+    @MainActor
+    func testResetDuringNetworkTransfer() async {
+        let coordinator = InstallationCoordinator(transport: IdleMockTransport())
+        coordinator.transportMode = .network
+
+        let url = try! createTempFile(name: "net_reset.nsp", content: Data(repeating: 0, count: 10))
+        coordinator.queueFiles([url])
+        coordinator.startInstallation()
+
+        try? await Task.sleep(for: .seconds(0.3))
+
+        coordinator.reset()
+
+        XCTAssertEqual(coordinator.state, .idle)
+        XCTAssertTrue(coordinator.progress.files.isEmpty)
+        XCTAssertNil(coordinator.networkInfo)
+        cleanup(url)
+    }
+
     // MARK: - Helpers
 
     private func createTempFile(name: String, content: Data) throws -> URL {
@@ -181,4 +283,37 @@ private final class MockMTPDevice: MTPDeviceProtocol, @unchecked Sendable {
     func sendFile(localPath: String, fileName: String, fileSize: UInt64,
                   parentFolderId: UInt32, storageId: UInt32,
                   progress: @escaping @Sendable (UInt64, UInt64) -> Bool) async throws {}
+}
+
+/// MTP device that fails N times then succeeds — for testing retry behavior.
+private final class RetryableMockMTPDevice: MTPDeviceProtocol, @unchecked Sendable {
+    private var failCount: Int
+    private var callCount = 0
+
+    init(failCount: Int) { self.failCount = failCount }
+
+    func detectDevices() async throws -> [MTPRawDevice] {
+        callCount += 1
+        if callCount <= failCount {
+            throw MTPError.transferFailed("transient")
+        }
+        return [MTPRawDevice(busNumber: 1, deviceNumber: 2, vendorId: 0x057E, productId: 0x3000)]
+    }
+
+    func open(device: MTPRawDevice) async throws {}
+    func close() async {}
+
+    func getStorages() async throws -> [MTPStorage] {
+        [MTPStorage(id: 1, description: "SD", freeSpaceInBytes: 32_000_000_000, maxCapacity: 64_000_000_000)]
+    }
+
+    func getFolders(storageId: UInt32) async throws -> [MTPFolder] {
+        [MTPFolder(id: 10, parentId: 0, storageId: 1, name: "MicroSD Install")]
+    }
+
+    func sendFile(localPath: String, fileName: String, fileSize: UInt64,
+                  parentFolderId: UInt32, storageId: UInt32,
+                  progress: @escaping @Sendable (UInt64, UInt64) -> Bool) async throws {
+        _ = progress(fileSize, fileSize)
+    }
 }

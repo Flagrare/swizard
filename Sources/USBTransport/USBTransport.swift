@@ -147,7 +147,7 @@ public final class USBTransport: TransportProtocol, @unchecked Sendable {
         var ctx: OpaquePointer?
         let initResult = libusb_init(&ctx)
         guard initResult == 0 else {
-            throw USBError.transferFailed(initResult)
+            throw USBError.initializationFailed(initResult)
         }
         self.context = ctx
 

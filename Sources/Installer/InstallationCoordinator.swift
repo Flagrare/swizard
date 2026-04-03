@@ -89,6 +89,8 @@ public final class InstallationCoordinator {
     public func cancel() {
         installTask?.cancel()
         installTask = nil
+        networkServer.stop()
+        networkInfo = nil
         log("Cancellation requested")
     }
 
@@ -177,30 +179,41 @@ public final class InstallationCoordinator {
         state = .connecting
         log("Connecting to Switch (MTP)...", level: .info)
 
-        do {
-            state = .transferring
+        let files = queuedURLs.map { url -> (String, String, UInt64) in
+            let size = (try? FileManager.default.attributesOfItem(atPath: url.path)[.size] as? UInt64) ?? 0
+            return (url.path, url.lastPathComponent, size)
+        }
 
-            let files = queuedURLs.map { url -> (String, String, UInt64) in
-                let size = (try? FileManager.default.attributesOfItem(atPath: url.path)[.size] as? UInt64) ?? 0
-                return (url.path, url.lastPathComponent, size)
-            }
+        let installer = MTPInstaller(device: mtpDevice)
+        var attempts = 0
+        let maxRetries = 3
 
-            let installer = MTPInstaller(device: mtpDevice)
-            try await installer.install(files: files) { [weak self] fileName, sent, total in
-                Task { @MainActor in
-                    self?.progress.updateProgress(fileName: fileName, transferredBytes: sent)
+        while true {
+            do {
+                try await installer.install(files: files) { [weak self] fileName, sent, total in
+                    Task { @MainActor in
+                        if self?.state == .connecting { self?.state = .transferring }
+                        self?.progress.updateProgress(fileName: fileName, transferredBytes: sent)
+                    }
+                    return true
                 }
-                return true
-            }
 
-            state = .complete
-            log("Installation complete!", level: .info)
-        } catch is CancellationError {
-            state = .idle
-            log("Installation cancelled", level: .warning)
-        } catch {
-            state = .error(error.localizedDescription)
-            log("Error: \(error.localizedDescription)", level: .error)
+                state = .complete
+                log("Installation complete!", level: .info)
+                return
+            } catch is CancellationError {
+                state = .idle
+                log("Installation cancelled", level: .warning)
+                return
+            } catch let error as MTPError where error.isRetryable && attempts < maxRetries {
+                attempts += 1
+                log("MTP error, retrying (\(attempts)/\(maxRetries))...", level: .warning)
+                try? await Task.sleep(for: .seconds(1))
+            } catch {
+                state = .error(error.localizedDescription)
+                log("Error: \(error.localizedDescription)", level: .error)
+                return
+            }
         }
     }
 
