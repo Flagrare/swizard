@@ -124,23 +124,6 @@ jobs:
           rm -rf "$PACKAGE_DIR"
           mkdir -p "$PACKAGE_DIR"
           mv "$APP_DIR" "$PACKAGE_DIR/SWizard.app"
-
-          cat > "$PACKAGE_DIR/Install-SWizard.command" <<'SCRIPT'
-          #!/bin/bash
-          set -euo pipefail
-
-          ROOT_DIR="$(cd "$(dirname "$0")" && pwd)"
-          SOURCE_APP="$ROOT_DIR/SWizard.app"
-          TARGET_APP="/Applications/SWizard.app"
-
-          rm -rf "$TARGET_APP"
-          ditto "$SOURCE_APP" "$TARGET_APP"
-          xattr -dr com.apple.quarantine "$TARGET_APP" || true
-
-          open "$TARGET_APP"
-          SCRIPT
-
-          chmod +x "$PACKAGE_DIR/Install-SWizard.command"
           ditto -c -k --sequesterRsrc --keepParent "$PACKAGE_DIR" "SWizard-${VERSION}-macos-arm64.zip"
 
       - name: Generate release notes
@@ -154,7 +137,9 @@ jobs:
 
           ### Download
           - Use \`SWizard-${VERSION}-macos-arm64.zip\`
-          - Unzip and run \`Install-SWizard.command\` to install in /Applications
+          - Unzip the archive
+          - Install and open from Terminal:
+            \`ditto "$HOME/Downloads/SWizard-${VERSION}/SWizard.app" "/Applications/SWizard.app" && xattr -dr com.apple.quarantine "/Applications/SWizard.app" && open "/Applications/SWizard.app"\`
 
           ### How to use
           1. On Switch DBI, select **Run DBI backend**
@@ -162,8 +147,8 @@ jobs:
           3. Drag your NSP/NSZ/XCI/XCZ files and click **Install**
 
           ### Notes
-          - This hobby alpha build is unsigned/not notarized, so macOS may show a security warning
-          - If blocked, run: \`xattr -dr com.apple.quarantine /Applications/SWizard.app\`
+          - This hobby alpha build is unsigned/not notarized
+          - Right-click Open may still be blocked on some systems; use the Terminal install command above
           EOF
 
       - name: Publish GitHub release

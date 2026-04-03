@@ -95,22 +95,21 @@ The workflow will:
 
 - Create and push the tag if it does not exist yet
 - Build a macOS arm64 `.app` bundle
-- Bundle `SWizard.app` with `Install-SWizard.command`
 - Upload `SWizard-<version>-macos-arm64.zip` to a GitHub Release
 
 ## Install from GitHub Release (no build required)
 
+Because this project is unsigned/not notarized, use this Terminal-assisted install flow.
+
 1. Download `SWizard-<version>-macos-arm64.zip` from the Release page
 2. Unzip the archive
-3. Drag `SWizard.app` into `/Applications`
-4. Open SWizard from Applications
-5. If macOS blocks launch, open Terminal once and run:
+3. Open Terminal and run:
 
 ```bash
-xattr -dr com.apple.quarantine "/Applications/SWizard.app"
+ditto "$HOME/Downloads/SWizard-<version>/SWizard.app" "/Applications/SWizard.app" && xattr -dr com.apple.quarantine "/Applications/SWizard.app" && open "/Applications/SWizard.app"
 ```
 
-Optional helper: the archive also includes `Install-SWizard.command` for automated copy/install.
+Replace `<version>` with the release version (example: `v0.1.0-alpha`).
 
 ## Use with Nintendo Switch (DBI)
 
