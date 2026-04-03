@@ -2,12 +2,14 @@ import Foundation
 import IOKit
 import IOKit.usb
 
-/// Scans all connected USB devices. Used as fallback when known PIDs don't match.
+/// Scans all connected USB devices via IOKit registry.
+/// Used for device discovery and debugging when known PIDs don't match.
 public enum USBDeviceScanner {
     public struct USBDeviceInfo: Sendable, CustomStringConvertible {
         public let vendorID: UInt16
         public let productID: UInt16
         public let name: String
+        public let service: io_service_t
 
         public var description: String {
             String(format: "%@ (VID: 0x%04X, PID: 0x%04X)", name, vendorID, productID)
@@ -16,35 +18,15 @@ public enum USBDeviceScanner {
 
     /// Find all USB devices matching a specific Vendor ID.
     public static func findDevices(vendorID: UInt16) -> [USBDeviceInfo] {
-        let matching = IOServiceMatching("IOUSBHostDevice") as NSMutableDictionary
-        matching["idVendor"] = vendorID
-
-        var iterator: io_iterator_t = 0
-        guard IOServiceGetMatchingServices(kIOMainPortDefault, matching, &iterator) == KERN_SUCCESS else {
-            return []
-        }
-        defer { IOObjectRelease(iterator) }
-
-        var devices: [USBDeviceInfo] = []
-        while true {
-            let service = IOIteratorNext(iterator)
-            guard service != 0 else { break }
-            defer { IOObjectRelease(service) }
-
-            let pid = ioRegistryValue(service: service, key: "idProduct") as? Int ?? 0
-            let name = ioRegistryValue(service: service, key: "USB Product Name") as? String ?? "Unknown"
-
-            devices.append(USBDeviceInfo(
-                vendorID: vendorID,
-                productID: UInt16(pid),
-                name: name
-            ))
-        }
-
-        return devices
+        findAllDevices().filter { $0.vendorID == vendorID }
     }
 
-    /// Find all USB devices (any vendor). Useful for debugging.
+    /// Find a device by VID + PID. Returns the IOKit service for opening.
+    public static func findDevice(vendorID: UInt16, productID: UInt16) -> USBDeviceInfo? {
+        findAllDevices().first { $0.vendorID == vendorID && $0.productID == productID }
+    }
+
+    /// Find all connected USB host devices.
     public static func findAllDevices() -> [USBDeviceInfo] {
         guard let matching = IOServiceMatching("IOUSBHostDevice") else { return [] }
 
@@ -58,23 +40,32 @@ public enum USBDeviceScanner {
         while true {
             let service = IOIteratorNext(iterator)
             guard service != 0 else { break }
-            defer { IOObjectRelease(service) }
 
-            let vid = ioRegistryValue(service: service, key: "idVendor") as? Int ?? 0
-            let pid = ioRegistryValue(service: service, key: "idProduct") as? Int ?? 0
-            let name = ioRegistryValue(service: service, key: "USB Product Name") as? String ?? "Unknown"
+            let vid = registryInt(service: service, key: "idVendor")
+            let pid = registryInt(service: service, key: "idProduct")
+            let name = registryString(service: service, key: "USB Product Name") ?? "Unknown"
 
             devices.append(USBDeviceInfo(
                 vendorID: UInt16(vid),
                 productID: UInt16(pid),
-                name: name
+                name: name,
+                service: service
             ))
+            // Note: caller must IOObjectRelease(service) if they use it
         }
 
         return devices
     }
 
-    private static func ioRegistryValue(service: io_service_t, key: String) -> Any? {
-        IORegistryEntryCreateCFProperty(service, key as CFString, kCFAllocatorDefault, 0)?.takeRetainedValue()
+    // MARK: - Private
+
+    private static func registryInt(service: io_service_t, key: String) -> Int {
+        let ref = IORegistryEntryCreateCFProperty(service, key as CFString, kCFAllocatorDefault, 0)
+        return (ref?.takeRetainedValue() as? Int) ?? 0
+    }
+
+    private static func registryString(service: io_service_t, key: String) -> String? {
+        let ref = IORegistryEntryCreateCFProperty(service, key as CFString, kCFAllocatorDefault, 0)
+        return ref?.takeRetainedValue() as? String
     }
 }

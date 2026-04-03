@@ -117,20 +117,12 @@ public final class IOUSBHostAdapter: USBBulkTransferProtocol, @unchecked Sendabl
     }
 
     private func findDeviceService(vendorID: UInt16, productID: UInt16) throws -> io_service_t {
-        // Use IOUSBHostDevice (modern macOS), not kIOUSBDeviceClassName (legacy)
-        let matching = IOServiceMatching("IOUSBHostDevice") as NSMutableDictionary
-        matching["idVendor"] = vendorID
-        matching["idProduct"] = productID
-
-        var iterator: io_iterator_t = 0
-        guard IOServiceGetMatchingServices(kIOMainPortDefault, matching, &iterator) == KERN_SUCCESS else {
+        // IOKit matching by idVendor doesn't work with IOUSBHostDevice on modern macOS.
+        // Use USBDeviceScanner to enumerate all devices and filter in code.
+        guard let device = USBDeviceScanner.findDevice(vendorID: vendorID, productID: productID) else {
             throw IOUSBHostError.deviceNotFound
         }
-        defer { IOObjectRelease(iterator) }
-
-        let service = IOIteratorNext(iterator)
-        guard service != 0 else { throw IOUSBHostError.deviceNotFound }
-        return service
+        return device.service
     }
 
     private func openDevice(service: io_service_t) throws -> IOUSBHostDevice {
