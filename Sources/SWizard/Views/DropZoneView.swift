@@ -37,8 +37,7 @@ struct DropZoneView: View {
         Task {
             var urls: [URL] = []
             for provider in providers {
-                if let item = try? await provider.loadItem(forTypeIdentifier: UTType.fileURL.identifier),
-                   let data = item as? Data,
+                if let data = await loadFileURLData(from: provider),
                    let url = URL(dataRepresentation: data, relativeTo: nil),
                    Self.supportedExtensions.contains(url.pathExtension.lowercased()) {
                     urls.append(url)
@@ -46,6 +45,14 @@ struct DropZoneView: View {
             }
             if !urls.isEmpty {
                 await MainActor.run { onDrop(urls) }
+            }
+        }
+    }
+
+    private func loadFileURLData(from provider: NSItemProvider) async -> Data? {
+        await withCheckedContinuation { continuation in
+            provider.loadDataRepresentation(forTypeIdentifier: UTType.fileURL.identifier) { data, _ in
+                continuation.resume(returning: data)
             }
         }
     }
