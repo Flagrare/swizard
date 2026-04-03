@@ -3,6 +3,7 @@ import CLibUSB
 import DBIProtocol
 
 /// Polls for Nintendo Switch USB device attach/detach events.
+/// Accepts an injectable pause predicate (Strategy) to avoid polling during transfers.
 public final class USBDeviceMonitor: Sendable {
     public enum Event: Sendable {
         case connected
@@ -10,27 +11,35 @@ public final class USBDeviceMonitor: Sendable {
     }
 
     private let pollInterval: TimeInterval
+    private let shouldPause: @Sendable () -> Bool
 
-    public init(pollInterval: TimeInterval = 1.0) {
+    public init(
+        pollInterval: TimeInterval = 1.0,
+        shouldPause: @escaping @Sendable () -> Bool = { false }
+    ) {
         self.pollInterval = pollInterval
+        self.shouldPause = shouldPause
     }
 
     /// Returns an AsyncStream of connection events.
     public func events() -> AsyncStream<Event> {
         AsyncStream { continuation in
-            let task = Task.detached { [pollInterval] in
+            let task = Task.detached { [pollInterval, shouldPause] in
                 var wasConnected = false
 
                 while !Task.isCancelled {
-                    let isConnected = Self.isSwitchConnected()
+                    if !shouldPause() {
+                        let isConnected = Self.isSwitchConnected()
 
-                    if isConnected && !wasConnected {
-                        continuation.yield(.connected)
-                    } else if !isConnected && wasConnected {
-                        continuation.yield(.disconnected)
+                        if isConnected && !wasConnected {
+                            continuation.yield(.connected)
+                        } else if !isConnected && wasConnected {
+                            continuation.yield(.disconnected)
+                        }
+
+                        wasConnected = isConnected
                     }
 
-                    wasConnected = isConnected
                     try? await Task.sleep(for: .seconds(pollInterval))
                 }
 

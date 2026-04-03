@@ -7,9 +7,24 @@ import USBTransport
 @MainActor
 final class AppState {
     let coordinator = InstallationCoordinator()
-    let deviceMonitor = USBDeviceMonitor()
+    let deviceMonitor: USBDeviceMonitor
     var isDeviceConnected = false
     private var monitorTask: Task<Void, Never>?
+
+    /// Shared flag for device mutex — set by coordinator state changes.
+    private let _isTransferActive = TransferActiveFlag()
+
+    init() {
+        let flag = _isTransferActive
+        self.deviceMonitor = USBDeviceMonitor { flag.value }
+    }
+
+    var isTransferActive: Bool {
+        switch coordinator.state {
+        case .transferring, .reconnecting: return true
+        default: return false
+        }
+    }
 
     func startMonitoring() {
         monitorTask?.cancel()
@@ -29,4 +44,14 @@ final class AppState {
         monitorTask?.cancel()
         monitorTask = nil
     }
+
+    /// Call this whenever coordinator state changes to keep the mutex flag in sync.
+    func updateTransferFlag() {
+        _isTransferActive.value = isTransferActive
+    }
+}
+
+/// Thread-safe flag bridging @MainActor state to background polling.
+final class TransferActiveFlag: @unchecked Sendable {
+    var value: Bool = false
 }

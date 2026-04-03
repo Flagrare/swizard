@@ -16,6 +16,9 @@ struct ContentView: View {
         .onAppear {
             appState.startMonitoring()
         }
+        .onChange(of: appState.coordinator.state) {
+            appState.updateTransferFlag()
+        }
     }
 
     // MARK: - Left Panel
