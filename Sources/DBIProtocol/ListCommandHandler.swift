@@ -27,7 +27,7 @@ public struct ListCommandHandler: DBICommandHandler {
 
         try await transport.write(fileListData)
 
-        delegate?.sessionDidLog("Sent file list: \(fileListString.trimmingCharacters(in: .newlines))")
+        delegate?.sessionDidLog("Sent file list: \(fileListString.trimmingCharacters(in: .newlines))", level: .debug)
 
         return .continue
     }

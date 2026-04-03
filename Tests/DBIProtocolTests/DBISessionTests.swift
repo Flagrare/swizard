@@ -154,6 +154,29 @@ final class DBISessionTests: XCTestCase {
         XCTAssertEqual(delegate.fileChunkEvents[1].totalOffset, 1024)
     }
 
+    func testSessionLogLevelsAreCorrect() async throws {
+        let transport = MockTransport()
+        let fileServer = MockFileServer()
+        let delegate = MockSessionDelegate()
+
+        transport.queueReadHeader(DBIHeader(commandType: .request, commandID: .exit, dataSize: 0))
+
+        let session = DBISession()
+        session.delegate = delegate
+        try await session.run(transport: transport, fileServer: fileServer)
+
+        // "session started" and "session ended" should be .info
+        let startEvent = delegate.logEvents.first(where: { $0.message.contains("session started") })
+        XCTAssertEqual(startEvent?.level, .info)
+
+        let endEvent = delegate.logEvents.first(where: { $0.message.contains("session ended") })
+        XCTAssertEqual(endEvent?.level, .info)
+
+        // "Received exit" should be .debug
+        let commandEvent = delegate.logEvents.first(where: { $0.message.contains("Received") })
+        XCTAssertEqual(commandEvent?.level, .debug)
+    }
+
     func testSessionThrowsOnUnknownCommand() async throws {
         let transport = MockTransport()
         let fileServer = MockFileServer()

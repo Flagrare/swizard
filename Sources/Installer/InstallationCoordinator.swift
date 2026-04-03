@@ -51,8 +51,8 @@ public final class InstallationCoordinator {
         }
 
         // Wire delegate callbacks to self (MainActor)
-        sessionDelegateAdapter.onLog = { [weak self] message in
-            Task { @MainActor in self?.log(message) }
+        sessionDelegateAdapter.onLog = { [weak self] message, level in
+            Task { @MainActor in self?.log(message, level: level) }
         }
         sessionDelegateAdapter.onFileChunk = { [weak self] fileName, _, totalOffset in
             Task { @MainActor in self?.progress.updateProgress(fileName: fileName, transferredBytes: totalOffset) }
@@ -80,33 +80,33 @@ public final class InstallationCoordinator {
 
     private func runInstallation() async {
         state = .connecting
-        log("Connecting to Switch...")
+        log("Connecting to Switch...", level: .info)
 
         do {
             try await transport.connect()
             state = .connected
-            log("Connected to Switch")
+            log("Connected to Switch", level: .info)
 
             state = .transferring
 
             try await session.run(transport: transport, fileServer: fileServer)
 
             state = .complete
-            log("Installation complete!")
+            log("Installation complete!", level: .info)
         } catch is CancellationError {
             state = .idle
-            log("Installation cancelled")
+            log("Installation cancelled", level: .warning)
         } catch {
             state = .error(error.localizedDescription)
-            log("Error: \(error.localizedDescription)")
+            log("Error: \(error.localizedDescription)", level: .error)
         }
 
         try? await transport.disconnect()
         installTask = nil
     }
 
-    func log(_ message: String) {
-        logs.append(LogEntry(message: message))
+    func log(_ message: String, level: LogLevel = .info) {
+        logs.append(LogEntry(message: message, level: level))
     }
 }
 
@@ -116,6 +116,12 @@ public struct LogEntry: Identifiable, Sendable {
     public let id = UUID()
     public let timestamp = Date()
     public let message: String
+    public let level: LogLevel
+
+    public init(message: String, level: LogLevel = .info) {
+        self.message = message
+        self.level = level
+    }
 }
 
 // MARK: - SessionDelegateAdapter
@@ -123,12 +129,12 @@ public struct LogEntry: Identifiable, Sendable {
 /// Bridges DBISessionDelegate (called from background) to MainActor coordinator.
 /// Uses closures to avoid direct cross-actor references.
 final class SessionDelegateAdapter: DBISessionDelegate, @unchecked Sendable {
-    var onLog: ((String) -> Void)?
+    var onLog: ((String, LogLevel) -> Void)?
     var onFileChunk: ((String, UInt32, UInt64) -> Void)?
     var onExit: (() -> Void)?
 
-    func sessionDidLog(_ message: String) {
-        onLog?(message)
+    func sessionDidLog(_ message: String, level: LogLevel) {
+        onLog?(message, level)
     }
 
     func sessionDidSendFileChunk(fileName: String, bytesInChunk: UInt32, totalOffset: UInt64) {
