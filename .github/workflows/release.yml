@@ -135,12 +135,35 @@ jobs:
           chmod +x "$PACKAGE_DIR/Install-SWizard.command"
           ditto -c -k --sequesterRsrc --keepParent "$PACKAGE_DIR" "SWizard-${VERSION}-macos-arm64.zip"
 
+      - name: Generate release notes
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          cat > RELEASE_NOTES.md <<EOF
+          ## SWizard ${VERSION}
+
+          Alpha release of SWizard for Nintendo Switch DBI backend installs.
+
+          ### Download
+          - Use \`SWizard-${VERSION}-macos-arm64.zip\`
+          - Unzip and run \`Install-SWizard.command\` to install in /Applications
+
+          ### How to use
+          1. On Switch DBI, select **Run DBI backend**
+          2. Connect USB to Mac and open SWizard from Applications
+          3. Drag your NSP/NSZ/XCI/XCZ files and click **Install**
+
+          ### Notes
+          - This hobby alpha build is unsigned/not notarized, so macOS may show a security warning
+          - If blocked, run: \`xattr -dr com.apple.quarantine /Applications/SWizard.app\`
+          EOF
+
       - name: Publish GitHub release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ inputs.version }}
           name: SWizard ${{ inputs.version }}
-          generate_release_notes: true
+          body_path: RELEASE_NOTES.md
           prerelease: ${{ contains(inputs.version, '-') }}
           make_latest: ${{ inputs.make_latest }}
           files: SWizard-${{ inputs.version }}-macos-arm64.zip

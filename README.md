@@ -60,12 +60,14 @@ DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift test
 .build/debug/SWizard
 ```
 
-## Easy local install (no terminal)
+## Build app bundle (recommended for local use)
 
-If you cloned this repo, you can use these double-click scripts:
+If you cloned this repo and want a normal `.app` you can double-click:
 
 1. Run `Build-SWizard.command` (builds `build/SWizard.app`)
 2. Run `Install-SWizard.command` (copies app to `/Applications` and opens it)
+
+After that, launch SWizard from Applications/Finder like any other macOS app.
 
 ## Releasing via GitHub Actions
 
@@ -82,23 +84,31 @@ The workflow will:
 - Bundle `SWizard.app` with `Install-SWizard.command`
 - Upload `SWizard-<version>-macos-arm64.zip` to a GitHub Release
 
-## Install from GitHub Release
+## Install from GitHub Release (no build required)
 
 1. Download `SWizard-<version>-macos-arm64.zip` from the Release page
 2. Unzip it and run `Install-SWizard.command`
-3. If macOS still blocks launch, open Terminal once and run:
+3. Open SWizard from Applications
+4. If macOS still blocks launch, open Terminal once and run:
 
 ```bash
 xattr -dr com.apple.quarantine "/Applications/SWizard.app"
 ```
 
-## Usage
+## Use with Nintendo Switch (DBI)
 
-1. Open DBI on your Switch → select **"Run DBI backend"** (not MTP responder)
-2. Connect the Switch to your Mac via USB
-3. Launch SWizard
-4. Drop `.nsp` / `.xci` files into the drop zone
-5. Click **Install**
+1. On the Switch, open DBI and select **Run DBI backend** (do not use MTP responder)
+2. Connect the Switch to your Mac with a USB data cable
+3. Launch SWizard from Applications
+4. Wait for SWizard to show connected status
+5. Drag `.nsp`, `.nsz`, `.xci`, or `.xcz` files into the drop area
+6. Click **Install** and keep DBI open until transfer finishes
+
+### Troubleshooting
+
+- If SWizard does not detect the Switch, confirm DBI is in **Run DBI backend** mode
+- If transfer is interrupted, keep SWizard open and reconnect USB; it will attempt to recover
+- If launch is blocked by macOS security, run the quarantine removal command shown above
 
 ## DBI0 Protocol
 
