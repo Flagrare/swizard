@@ -26,9 +26,18 @@ public final class USBDeviceMonitor: Sendable {
         AsyncStream { continuation in
             let task = Task.detached { [pollInterval, shouldPause] in
                 var wasConnected = false
+                var wasPaused = false
 
                 while !Task.isCancelled {
-                    if !shouldPause() {
+                    let paused = shouldPause()
+
+                    if !paused {
+                        // If resuming from pause, re-check state from scratch
+                        // to avoid missing events that happened while paused
+                        if wasPaused {
+                            wasConnected = false
+                        }
+
                         let isConnected = Self.isSwitchConnected()
 
                         if isConnected && !wasConnected {
@@ -40,6 +49,7 @@ public final class USBDeviceMonitor: Sendable {
                         wasConnected = isConnected
                     }
 
+                    wasPaused = paused
                     try? await Task.sleep(for: .seconds(pollInterval))
                 }
 
