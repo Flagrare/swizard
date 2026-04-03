@@ -69,6 +69,8 @@ If you cloned this repo and want a normal `.app` you can double-click:
 
 After that, launch SWizard from Applications/Finder like any other macOS app.
 
+To regenerate the app icon asset used by the bundle, run `scripts/generate-icon.sh`.
+
 ## Releasing via GitHub Actions
 
 You can publish a specific version from the **Release** workflow:

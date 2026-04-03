@@ -9,6 +9,7 @@ APP_DIR="build/${APP_NAME}.app"
 CONTENTS_DIR="${APP_DIR}/Contents"
 MACOS_DIR="${CONTENTS_DIR}/MacOS"
 RESOURCES_DIR="${CONTENTS_DIR}/Resources"
+ICON_SOURCE="Assets/${APP_NAME}.icns"
 
 echo "Building ${APP_NAME} (release)..."
 export DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer
@@ -20,6 +21,10 @@ mkdir -p "${MACOS_DIR}" "${RESOURCES_DIR}"
 
 # Copy executable
 cp "${BUILD_DIR}/${APP_NAME}" "${MACOS_DIR}/${APP_NAME}"
+
+if [[ -f "${ICON_SOURCE}" ]]; then
+    cp "${ICON_SOURCE}" "${RESOURCES_DIR}/${APP_NAME}.icns"
+fi
 
 # Create Info.plist
 cat > "${CONTENTS_DIR}/Info.plist" << 'PLIST'
@@ -35,6 +40,8 @@ cat > "${CONTENTS_DIR}/Info.plist" << 'PLIST'
     <string>SWizard</string>
     <key>CFBundleDisplayName</key>
     <string>SWizard</string>
+    <key>CFBundleIconFile</key>
+    <string>SWizard.icns</string>
     <key>CFBundleVersion</key>
     <string>1.0.0</string>
     <key>CFBundleShortVersionString</key>

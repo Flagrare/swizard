@@ -74,11 +74,17 @@ jobs:
           PACKAGE_DIR="dist/SWizard-${VERSION}"
           CONTENTS_DIR="$APP_DIR/Contents"
           MACOS_DIR="$CONTENTS_DIR/MacOS"
+          RESOURCES_DIR="$CONTENTS_DIR/Resources"
+          ICON_SOURCE="Assets/SWizard.icns"
 
           rm -rf "$APP_DIR"
-          mkdir -p "$MACOS_DIR"
+          mkdir -p "$MACOS_DIR" "$RESOURCES_DIR"
           cp "$BIN_PATH/SWizard" "$MACOS_DIR/SWizard"
           chmod +x "$MACOS_DIR/SWizard"
+
+          if [[ -f "$ICON_SOURCE" ]]; then
+            cp "$ICON_SOURCE" "$RESOURCES_DIR/SWizard.icns"
+          fi
 
           cat > "$CONTENTS_DIR/Info.plist" <<PLIST
           <?xml version="1.0" encoding="UTF-8"?>
@@ -93,6 +99,8 @@ jobs:
               <string>SWizard</string>
               <key>CFBundleDisplayName</key>
               <string>SWizard</string>
+              <key>CFBundleIconFile</key>
+              <string>SWizard.icns</string>
               <key>CFBundleVersion</key>
               <string>$APP_VERSION</string>
               <key>CFBundleShortVersionString</key>
