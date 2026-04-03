@@ -9,6 +9,7 @@ public final class HTTPFileServer: @unchecked Sendable {
     private var files: [(url: URL, size: UInt64)] = []
     private let queue = DispatchQueue(label: "com.swizard.httpserver")
     public var onProgress: (@Sendable (_ fileIndex: Int, _ bytesSent: UInt64, _ totalSize: UInt64) -> Void)?
+    public var onError: (@Sendable (_ message: String) -> Void)?
 
     public init(port: UInt16 = 5000) {
         self.port = port
@@ -93,29 +94,32 @@ public final class HTTPFileServer: @unchecked Sendable {
             let handle = try FileHandle(forReadingFrom: file.url)
             defer { handle.closeFile() }
 
-            let response: HTTPResponse
-            if let range = request.range {
-                let end = range.end ?? (file.size - 1)
-                let length = end - range.start + 1
-                handle.seek(toFileOffset: range.start)
-                let data = handle.readData(ofLength: Int(length))
+            // Treat non-Range as full file range to avoid loading entire file into memory
+            let rangeStart = request.range?.start ?? 0
+            let rangeEnd = request.range?.end ?? (file.size - 1)
+            let maxChunk: UInt64 = 8 * 1024 * 1024 // 8MB max per response to avoid OOM
+            let length = min(rangeEnd - rangeStart + 1, maxChunk)
 
+            handle.seek(toFileOffset: rangeStart)
+            let data = handle.readData(ofLength: Int(length))
+            let actualEnd = rangeStart + UInt64(data.count) - 1
+
+            let response: HTTPResponse
+            if request.range != nil {
                 response = HTTPResponse.partialContent(
                     data: data,
-                    rangeStart: range.start,
-                    rangeEnd: range.start + UInt64(data.count) - 1,
+                    rangeStart: rangeStart,
+                    rangeEnd: actualEnd,
                     totalSize: file.size
                 )
-
-                onProgress?(fileIndex, range.start + UInt64(data.count), file.size)
             } else {
-                let data = handle.readData(ofLength: Int(file.size))
                 response = HTTPResponse.ok(data: data, totalSize: file.size)
-                onProgress?(fileIndex, file.size, file.size)
             }
 
+            onProgress?(fileIndex, actualEnd + 1, file.size)
             sendResponse(response, on: connection)
         } catch {
+            onError?("File read error: \(error.localizedDescription)")
             sendResponse(HTTPResponse.notFound(), on: connection)
         }
     }

@@ -1,4 +1,5 @@
 import Foundation
+import os
 import Installer
 import USBTransport
 
@@ -81,6 +82,12 @@ final class AppState {
 }
 
 /// Thread-safe flag bridging @MainActor state to background polling.
-final class TransferActiveFlag: @unchecked Sendable {
-    var value: Bool = false
+/// Uses os_unfair_lock for safe concurrent read/write.
+final class TransferActiveFlag: Sendable {
+    private let lock = OSAllocatedUnfairLock(initialState: false)
+
+    var value: Bool {
+        get { lock.withLock { $0 } }
+        set { lock.withLock { $0 = newValue } }
+    }
 }

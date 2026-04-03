@@ -55,10 +55,12 @@ public final class MTPDevice: MTPDeviceProtocol, @unchecked Sendable {
 
                 defer { free(rawDevices) }
 
-                // Find the matching device by bus/device number
+                // Find the matching device by bus location + device number
                 var found: UnsafeMutablePointer<LIBMTP_raw_device_t>?
                 for i in 0..<Int(count) {
-                    if rawDevices[i].devnum == rawDevice.deviceNumber {
+                    let raw = rawDevices[i]
+                    if raw.devnum == rawDevice.deviceNumber &&
+                       UInt32(raw.bus_location) == rawDevice.busNumber {
                         found = rawDevices + i
                         break
                     }
