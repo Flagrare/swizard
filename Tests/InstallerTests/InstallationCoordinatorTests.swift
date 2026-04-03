@@ -221,20 +221,23 @@ final class InstallationCoordinatorTests: XCTestCase {
     // MARK: - UX Journey: MTP retries on transient error
 
     @MainActor
-    func testMTPModeRetriesOnTransientError() async {
-        let mockMTP = RetryableMockMTPDevice(failCount: 1)
-        let coordinator = InstallationCoordinator(transport: IdleMockTransport(), mtpDevice: mockMTP)
+    func testMTPModeReachesErrorWhenPrivilegedSessionFails() async {
+        // MTP mode now uses PrivilegedMTPSession (osascript).
+        // Without a real Switch, the script fails — verify error state is reached.
+        let coordinator = InstallationCoordinator(transport: IdleMockTransport())
         coordinator.transportMode = .mtp
 
-        let url = try! createTempFile(name: "mtp_retry.nsp", content: Data(repeating: 0, count: 10))
+        let url = try! createTempFile(name: "mtp_priv.nsp", content: Data(repeating: 0, count: 10))
         coordinator.queueFiles([url])
         coordinator.startInstallation()
 
-        try? await Task.sleep(for: .seconds(2.0))
+        try? await Task.sleep(for: .seconds(3.0))
 
-        // Should have retried and succeeded
-        XCTAssertEqual(coordinator.state, .complete)
-        XCTAssertTrue(coordinator.logs.contains(where: { $0.message.contains("retrying") }))
+        if case .error = coordinator.state { } else {
+            XCTFail("Expected .error when no Switch connected, got \(coordinator.state)")
+        }
+        // Should have logged the MTP admin privilege warning
+        XCTAssertTrue(coordinator.logs.contains(where: { $0.message.contains("admin privileges") }))
         cleanup(url)
     }
 

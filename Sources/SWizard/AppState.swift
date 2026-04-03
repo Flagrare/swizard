@@ -48,7 +48,7 @@ final class AppState {
         case .dbiBackend:
             "On your Switch, open DBI and select \"Run DBI backend\" before connecting USB."
         case .mtp:
-            "On your Switch, open DBI and select \"Run MTP responder\" before connecting USB."
+            "On your Switch, open DBI → \"Run MTP responder\". SWizard will ask for your admin password once to claim USB from macOS."
         case .network:
             "Drop files, click Install, then on your Switch: DBI → Run HTTP server → enter the URL shown below."
         }

@@ -2,6 +2,7 @@ import Foundation
 import DBIProtocol
 import USBTransport
 import MTPTransport
+import NativeMTPTransport
 import NetworkTransport
 
 /// Mediator: orchestrates USB connection, DBI protocol, and file serving.
@@ -178,42 +179,39 @@ public final class InstallationCoordinator {
     private func runMTPInstallation() async {
         state = .connecting
         log("Connecting to Switch (MTP)...", level: .info)
+        log("MTP requires admin privileges to claim USB from macOS.", level: .warning)
 
-        let files = queuedURLs.map { url -> (String, String, UInt64) in
+        let files = queuedURLs.map { url -> PrivilegedMTPSession.FileToInstall in
             let size = (try? FileManager.default.attributesOfItem(atPath: url.path)[.size] as? UInt64) ?? 0
-            return (url.path, url.lastPathComponent, size)
+            return PrivilegedMTPSession.FileToInstall(path: url.path, name: url.lastPathComponent, size: size)
         }
 
-        let installer = MTPInstaller(device: mtpDevice)
-        var attempts = 0
-        let maxRetries = 3
+        let session = PrivilegedMTPSession()
 
-        while true {
-            do {
-                try await installer.install(files: files) { [weak self] fileName, sent, total in
+        do {
+            try await session.install(
+                files: files,
+                onProgress: { [weak self] fileName, sent, total in
                     Task { @MainActor in
                         if self?.state == .connecting { self?.state = .transferring }
                         self?.progress.updateProgress(fileName: fileName, transferredBytes: sent)
                     }
-                    return true
+                },
+                onLog: { [weak self] (message: String) in
+                    Task { @MainActor in
+                        self?.log("[MTP] \(message)", level: .debug)
+                    }
                 }
+            )
 
-                state = .complete
-                log("Installation complete!", level: .info)
-                return
-            } catch is CancellationError {
-                state = .idle
-                log("Installation cancelled", level: .warning)
-                return
-            } catch let error as MTPError where error.isRetryable && attempts < maxRetries {
-                attempts += 1
-                log("MTP error, retrying (\(attempts)/\(maxRetries))...", level: .warning)
-                try? await Task.sleep(for: .seconds(1))
-            } catch {
-                state = .error(error.localizedDescription)
-                log("Error: \(error.localizedDescription)", level: .error)
-                return
-            }
+            state = .complete
+            log("Installation complete!", level: .info)
+        } catch is CancellationError {
+            state = .idle
+            log("Installation cancelled", level: .warning)
+        } catch {
+            state = .error(error.localizedDescription)
+            log("Error: \(error.localizedDescription)", level: .error)
         }
     }
 
