@@ -97,7 +97,7 @@ final class AppState {
 
         // Step 2: Try adapter open (includes privileged claim)
         logMTP("Requesting admin privileges for USB claim...", level: .warning)
-        let adapter = IOUSBHostAdapter()
+        let adapter = mtpAdapterFactory()
         do {
             try await adapter.open(
                 vendorID: NintendoSwitchUSB.vendorID,
@@ -131,6 +131,9 @@ final class AppState {
     // MARK: - MTP Connection Test
 
     var mtpTestResult: String?
+
+    /// Injectable for testing — defaults to real IOUSBHostAdapter.
+    var mtpAdapterFactory: () -> any USBBulkTransferProtocol = { IOUSBHostAdapter() }
 
     func testMTPConnection() {
         mtpTestResult = "Testing..."

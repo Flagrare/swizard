@@ -1,5 +1,6 @@
 import XCTest
 @testable import SWizard
+@testable import NativeMTPTransport
 
 @MainActor
 final class AppStateTests: XCTestCase {
@@ -36,15 +37,14 @@ final class AppStateTests: XCTestCase {
     func testMTPDiagnosticLogsToActivityLog() async {
         let store = InMemoryPreferencesStore()
         let state = AppState(preferences: store)
+        // Inject mock adapter so test never prompts for password
+        state.mtpAdapterFactory = { MockBulkTransfer() }
 
-        // Before running diagnostic, activity log should be empty or have only startup logs
         let logCountBefore = state.coordinator.logs.count
 
-        // Run diagnostic (will fail since no Switch is connected — that's fine)
         state.testMTPConnection()
-        try? await Task.sleep(for: .seconds(0.5))
+        try? await Task.sleep(for: .seconds(1.0))
 
-        // Activity log should have new entries from the diagnostic
         let newLogs = state.coordinator.logs.dropFirst(logCountBefore)
         XCTAssertFalse(newLogs.isEmpty, "MTP diagnostic should write to activity log")
         XCTAssertTrue(newLogs.contains(where: { $0.message.contains("[MTP]") }),
@@ -54,12 +54,22 @@ final class AppStateTests: XCTestCase {
     func testMTPTestResultStartsAsTesting() async {
         let store = InMemoryPreferencesStore()
         let state = AppState(preferences: store)
+        state.mtpAdapterFactory = { MockBulkTransfer() }
 
         XCTAssertNil(state.mtpTestResult)
         state.testMTPConnection()
-        // Immediately after calling, should be "Testing..."
         XCTAssertEqual(state.mtpTestResult, "Testing...")
     }
+}
+
+/// Mock USB adapter for tests — never prompts for password.
+private final class MockBulkTransfer: USBBulkTransferProtocol, @unchecked Sendable {
+    func open(vendorID: UInt16, productID: UInt16) async throws {
+        throw IOUSBHostError.deviceNotFound
+    }
+    func close() async {}
+    func readBulk(maxLength: Int) async throws -> Data { Data() }
+    func writeBulk(_ data: Data) async throws {}
 }
 
 private final class InMemoryPreferencesStore: PreferencesStore {

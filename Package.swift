@@ -90,7 +90,7 @@ let package = Package(
         ),
         .testTarget(
             name: "SWizardTests",
-            dependencies: ["SWizard"]
+            dependencies: ["SWizard", "NativeMTPTransport"]
         ),
     ]
 )
