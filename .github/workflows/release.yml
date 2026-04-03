@@ -25,6 +25,14 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Select Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+
+      - name: Verify Swift version
+        run: swift --version
+
       - name: Validate version input
         env:
           VERSION: ${{ inputs.version }}
