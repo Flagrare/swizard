@@ -2,6 +2,13 @@ import Foundation
 import Installer
 import USBTransport
 
+protocol PreferencesStore {
+    func bool(forKey defaultName: String) -> Bool
+    func set(_ value: Bool, forKey defaultName: String)
+}
+
+extension UserDefaults: PreferencesStore {}
+
 /// Top-level observable state for the app.
 @Observable
 @MainActor
@@ -13,14 +20,16 @@ final class AppState {
     var isDeviceConnected = false
     var showInstallHelp: Bool
     private var monitorTask: Task<Void, Never>?
+    private let preferences: PreferencesStore
 
     /// Shared flag for device mutex — set by coordinator state changes.
     private let _isTransferActive = TransferActiveFlag()
 
-    init() {
+    init(preferences: PreferencesStore = UserDefaults.standard) {
         let flag = _isTransferActive
+        self.preferences = preferences
         self.deviceMonitor = USBDeviceMonitor { flag.value }
-        self.showInstallHelp = !UserDefaults.standard.bool(forKey: Self.installHelpDismissedKey)
+        self.showInstallHelp = !preferences.bool(forKey: Self.installHelpDismissedKey)
     }
 
     var isTransferActive: Bool {
@@ -56,7 +65,7 @@ final class AppState {
 
     func dismissInstallHelp() {
         showInstallHelp = false
-        UserDefaults.standard.set(true, forKey: Self.installHelpDismissedKey)
+        preferences.set(true, forKey: Self.installHelpDismissedKey)
     }
 }
 
