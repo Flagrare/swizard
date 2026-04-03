@@ -164,77 +164,13 @@ struct ContentView: View {
         }
     }
 
-    @ViewBuilder
     private var installButton: some View {
-        switch appState.coordinator.state {
-        case .idle:
-            Button("Install") {
-                appState.coordinator.startInstallation()
-            }
-            .buttonStyle(.borderedProminent)
-            .disabled(appState.coordinator.progress.files.isEmpty || installRequiresDevice)
-
-        case .connecting:
-            HStack(spacing: 8) {
-                ProgressView().controlSize(.small)
-                Text("Connecting...")
-            }
-
-        case .connected:
-            HStack(spacing: 8) {
-                ProgressView().controlSize(.small)
-                Text("Connected, waiting...")
-            }
-
-        case .transferring:
-            let stats = appState.coordinator.progress.overallStats
-            HStack(spacing: 8) {
-                ProgressView(value: appState.coordinator.progress.overallFraction)
-                    .frame(width: 80)
-                Text("\(Int(appState.coordinator.progress.overallFraction * 100))%")
-                    .font(.system(.caption, design: .monospaced))
-
-                if stats.bytesPerSecond > 0 {
-                    Text(stats.formattedSpeed)
-                        .font(.system(.caption, design: .monospaced))
-                        .foregroundStyle(.secondary)
-                }
-
-                if let eta = stats.formattedETA {
-                    Text(eta)
-                        .font(.system(.caption, design: .monospaced))
-                        .foregroundStyle(.secondary)
-                }
-
-                Button("Cancel") {
-                    appState.coordinator.cancel()
-                }
-                .buttonStyle(.plain)
-                .foregroundStyle(.red)
-            }
-
-        case .reconnecting(let attempt):
-            HStack(spacing: 8) {
-                ProgressView().controlSize(.small)
-                Text("Reconnecting (\(attempt))...")
-                    .foregroundStyle(.orange)
-
-                Button("Cancel") {
-                    appState.coordinator.cancel()
-                }
-                .buttonStyle(.plain)
-                .foregroundStyle(.red)
-            }
-
-        case .complete:
-            Label("Complete!", systemImage: "checkmark.circle.fill")
-                .foregroundStyle(.green)
-
-        case .error(let message):
-            Label(message, systemImage: "exclamationmark.triangle.fill")
-                .foregroundStyle(.red)
-                .font(.caption)
-                .lineLimit(1)
-        }
+        InstallButtonView(
+            state: appState.coordinator.state,
+            progress: appState.coordinator.progress,
+            isDisabled: appState.coordinator.progress.files.isEmpty || installRequiresDevice,
+            onInstall: { appState.coordinator.startInstallation() },
+            onCancel: { appState.coordinator.cancel() }
+        )
     }
 }

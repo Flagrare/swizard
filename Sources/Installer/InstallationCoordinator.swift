@@ -260,37 +260,3 @@ public final class InstallationCoordinator {
         logs.append(LogEntry(message: message, level: level))
     }
 }
-
-// MARK: - LogEntry
-
-public struct LogEntry: Identifiable, Sendable {
-    public let id = UUID()
-    public let timestamp = Date()
-    public let message: String
-    public let level: LogLevel
-
-    public init(message: String, level: LogLevel = .info) {
-        self.message = message
-        self.level = level
-    }
-}
-
-// MARK: - SessionDelegateAdapter
-
-final class SessionDelegateAdapter: DBISessionDelegate, @unchecked Sendable {
-    var onLog: ((String, LogLevel) -> Void)?
-    var onFileChunk: ((String, UInt32, UInt64) -> Void)?
-    var onExit: (() -> Void)?
-
-    func sessionDidLog(_ message: String, level: LogLevel) {
-        onLog?(message, level)
-    }
-
-    func sessionDidSendFileChunk(fileName: String, bytesInChunk: UInt32, totalOffset: UInt64) {
-        onFileChunk?(fileName, bytesInChunk, totalOffset)
-    }
-
-    func sessionDidReceiveExit() {
-        onExit?()
-    }
-}

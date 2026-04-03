@@ -2,7 +2,7 @@ import Foundation
 
 /// Facade: orchestrates the full MTP install flow.
 /// detect device → open → find install folder → send each file → close
-/// Composes MTPFolderBrowser + MTPFileTransfer (SRP per component).
+/// Composes MTPFolderBrowser + MTPDeviceProtocol.sendFile (SRP per component).
 public final class MTPInstaller: Sendable {
     private let device: any MTPDeviceProtocol
     private let installFolderName: String
@@ -34,11 +34,9 @@ public final class MTPInstaller: Sendable {
                 throw MTPError.installFolderNotFound(installFolderName)
             }
 
-            // Step 3: Send each file
-            let transfer = MTPFileTransfer(device: device)
-
+            // Step 3: Send each file directly via device protocol
             for file in files {
-                try await transfer.sendFile(
+                try await device.sendFile(
                     localPath: file.localPath,
                     fileName: file.fileName,
                     fileSize: file.fileSize,
