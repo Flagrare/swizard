@@ -297,7 +297,7 @@ private final class RetryableMockMTPDevice: MTPDeviceProtocol, @unchecked Sendab
         if callCount <= failCount {
             throw MTPError.transferFailed("transient")
         }
-        return [MTPRawDevice(busNumber: 1, deviceNumber: 2, vendorId: 0x057E, productId: 0x3000)]
+        return [MTPRawDevice(busNumber: 1, deviceNumber: 2, vendorId: NintendoSwitchUSB.vendorID, productId: NintendoSwitchUSB.mtpProductID)]
     }
 
     func open(device: MTPRawDevice) async throws {}

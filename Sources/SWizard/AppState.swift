@@ -96,11 +96,16 @@ final class AppState {
                     productID: NintendoSwitchUSB.mtpProductID
                 )
                 await adapter.close()
-                mtpTestResult = "SUCCESS — DeviceSeize worked! IOUSBHost claimed the Switch."
-                // logged in mtpTestResult
+                mtpTestResult = "SUCCESS — IOUSBHost claimed the Switch!"
             } catch {
-                mtpTestResult = "FAILED — \(error.localizedDescription)"
-                // logged in mtpTestResult
+                // Auto-detect: scan for any Nintendo USB device to help debug
+                let nintendoDevices = USBDeviceScanner.findDevices(vendorID: NintendoSwitchUSB.vendorID)
+                if nintendoDevices.isEmpty {
+                    mtpTestResult = "FAILED — No Nintendo USB device found. Is the Switch connected?"
+                } else {
+                    let found = nintendoDevices.map(\.description).joined(separator: ", ")
+                    mtpTestResult = "FAILED — Found: \(found). Error: \(error.localizedDescription)"
+                }
             }
         }
     }

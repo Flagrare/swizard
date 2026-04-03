@@ -1,12 +1,13 @@
 import XCTest
 @testable import MTPTransport
+import DBIProtocol
 
 final class MTPInstallerTests: XCTestCase {
 
     private func makeConfiguredMock() -> MockMTPDevice {
         let mock = MockMTPDevice()
         mock.devicesToReturn = [
-            MTPRawDevice(busNumber: 1, deviceNumber: 2, vendorId: 0x057E, productId: 0x3000)
+            MTPRawDevice(busNumber: 1, deviceNumber: 2, vendorId: NintendoSwitchUSB.vendorID, productId: NintendoSwitchUSB.mtpProductID)
         ]
         mock.storagesToReturn = [
             MTPStorage(id: 1, description: "SD", freeSpaceInBytes: 32_000_000_000, maxCapacity: 64_000_000_000)
@@ -80,7 +81,7 @@ final class MTPInstallerTests: XCTestCase {
     func testInstallThrowsWhenInstallFolderNotFound() async {
         let mock = MockMTPDevice()
         mock.devicesToReturn = [
-            MTPRawDevice(busNumber: 1, deviceNumber: 2, vendorId: 0x057E, productId: 0x3000)
+            MTPRawDevice(busNumber: 1, deviceNumber: 2, vendorId: NintendoSwitchUSB.vendorID, productId: NintendoSwitchUSB.mtpProductID)
         ]
         mock.storagesToReturn = [
             MTPStorage(id: 1, description: "SD", freeSpaceInBytes: 1000, maxCapacity: 2000)

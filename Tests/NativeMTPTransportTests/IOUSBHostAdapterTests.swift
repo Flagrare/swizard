@@ -1,5 +1,6 @@
 import XCTest
 @testable import NativeMTPTransport
+import DBIProtocol
 
 final class IOUSBHostAdapterTests: XCTestCase {
 
@@ -7,16 +8,16 @@ final class IOUSBHostAdapterTests: XCTestCase {
 
     func testMockOpenRecordsVIDPID() async throws {
         let mock = MockUSBBulkTransfer()
-        try await mock.open(vendorID: 0x057E, productID: 0x3000)
+        try await mock.open(vendorID: NintendoSwitchUSB.vendorID, productID: NintendoSwitchUSB.mtpProductID)
 
         XCTAssertTrue(mock.isOpen)
-        XCTAssertEqual(mock.openedVendorID, 0x057E)
-        XCTAssertEqual(mock.openedProductID, 0x3000)
+        XCTAssertEqual(mock.openedVendorID, NintendoSwitchUSB.vendorID)
+        XCTAssertEqual(mock.openedProductID, NintendoSwitchUSB.mtpProductID)
     }
 
     func testMockCloseMarksNotOpen() async throws {
         let mock = MockUSBBulkTransfer()
-        try await mock.open(vendorID: 0x057E, productID: 0x3000)
+        try await mock.open(vendorID: NintendoSwitchUSB.vendorID, productID: NintendoSwitchUSB.mtpProductID)
         await mock.close()
 
         XCTAssertFalse(mock.isOpen)
@@ -27,7 +28,7 @@ final class IOUSBHostAdapterTests: XCTestCase {
         mock.openShouldFail = true
 
         do {
-            try await mock.open(vendorID: 0x057E, productID: 0x3000)
+            try await mock.open(vendorID: NintendoSwitchUSB.vendorID, productID: NintendoSwitchUSB.mtpProductID)
             XCTFail("Should have thrown")
         } catch let error as IOUSBHostError {
             XCTAssertEqual(error, .deviceNotFound)

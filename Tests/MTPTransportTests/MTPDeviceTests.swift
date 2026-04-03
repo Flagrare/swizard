@@ -1,19 +1,20 @@
 import XCTest
 @testable import MTPTransport
+import DBIProtocol
 
 final class MTPDeviceTests: XCTestCase {
 
     // MARK: - MTPRawDevice Value Object
 
     func testRawDeviceEquality() {
-        let a = MTPRawDevice(busNumber: 1, deviceNumber: 2, vendorId: 0x057E, productId: 0x3000)
-        let b = MTPRawDevice(busNumber: 1, deviceNumber: 2, vendorId: 0x057E, productId: 0x3000)
+        let a = MTPRawDevice(busNumber: 1, deviceNumber: 2, vendorId: NintendoSwitchUSB.vendorID, productId: NintendoSwitchUSB.mtpProductID)
+        let b = MTPRawDevice(busNumber: 1, deviceNumber: 2, vendorId: NintendoSwitchUSB.vendorID, productId: NintendoSwitchUSB.mtpProductID)
         XCTAssertEqual(a, b)
     }
 
     func testRawDeviceInequality() {
-        let a = MTPRawDevice(busNumber: 1, deviceNumber: 2, vendorId: 0x057E, productId: 0x3000)
-        let b = MTPRawDevice(busNumber: 1, deviceNumber: 3, vendorId: 0x057E, productId: 0x3000)
+        let a = MTPRawDevice(busNumber: 1, deviceNumber: 2, vendorId: NintendoSwitchUSB.vendorID, productId: NintendoSwitchUSB.mtpProductID)
+        let b = MTPRawDevice(busNumber: 1, deviceNumber: 3, vendorId: NintendoSwitchUSB.vendorID, productId: NintendoSwitchUSB.mtpProductID)
         XCTAssertNotEqual(a, b)
     }
 
@@ -54,12 +55,12 @@ final class MTPDeviceTests: XCTestCase {
     func testMockDetectsDevices() async throws {
         let mock = MockMTPDevice()
         mock.devicesToReturn = [
-            MTPRawDevice(busNumber: 1, deviceNumber: 2, vendorId: 0x057E, productId: 0x3000)
+            MTPRawDevice(busNumber: 1, deviceNumber: 2, vendorId: NintendoSwitchUSB.vendorID, productId: NintendoSwitchUSB.mtpProductID)
         ]
 
         let devices = try await mock.detectDevices()
         XCTAssertEqual(devices.count, 1)
-        XCTAssertEqual(devices[0].vendorId, 0x057E)
+        XCTAssertEqual(devices[0].vendorId, NintendoSwitchUSB.vendorID)
         XCTAssertTrue(mock.detectCalled)
     }
 
@@ -78,7 +79,7 @@ final class MTPDeviceTests: XCTestCase {
 
     func testMockOpenCloseLifecycle() async throws {
         let mock = MockMTPDevice()
-        let device = MTPRawDevice(busNumber: 1, deviceNumber: 2, vendorId: 0x057E, productId: 0x3000)
+        let device = MTPRawDevice(busNumber: 1, deviceNumber: 2, vendorId: NintendoSwitchUSB.vendorID, productId: NintendoSwitchUSB.mtpProductID)
 
         try await mock.open(device: device)
         XCTAssertEqual(mock.openedDevice, device)
