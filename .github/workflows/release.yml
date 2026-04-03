@@ -56,7 +56,7 @@ jobs:
       - name: Install build dependency
         run: brew install libusb
 
-      - name: Build and package release binary
+      - name: Build and package app bundle
         env:
           VERSION: ${{ inputs.version }}
         run: |
@@ -69,10 +69,50 @@ jobs:
             exit 1
           fi
 
-          mkdir -p dist
-          cp "$BIN_PATH/SWizard" "dist/SWizard"
-          chmod +x "dist/SWizard"
-          tar -C dist -czf "SWizard-${VERSION}-macos-arm64.tar.gz" SWizard
+          APP_VERSION=${VERSION#v}
+          APP_DIR="dist/SWizard.app"
+          CONTENTS_DIR="$APP_DIR/Contents"
+          MACOS_DIR="$CONTENTS_DIR/MacOS"
+
+          rm -rf "$APP_DIR"
+          mkdir -p "$MACOS_DIR"
+          cp "$BIN_PATH/SWizard" "$MACOS_DIR/SWizard"
+          chmod +x "$MACOS_DIR/SWizard"
+
+          cat > "$CONTENTS_DIR/Info.plist" <<PLIST
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+              <key>CFBundleExecutable</key>
+              <string>SWizard</string>
+              <key>CFBundleIdentifier</key>
+              <string>com.swizard.app</string>
+              <key>CFBundleName</key>
+              <string>SWizard</string>
+              <key>CFBundleDisplayName</key>
+              <string>SWizard</string>
+              <key>CFBundleVersion</key>
+              <string>$APP_VERSION</string>
+              <key>CFBundleShortVersionString</key>
+              <string>$APP_VERSION</string>
+              <key>CFBundlePackageType</key>
+              <string>APPL</string>
+              <key>LSMinimumSystemVersion</key>
+              <string>15.0</string>
+              <key>CFBundleSupportedPlatforms</key>
+              <array>
+                  <string>MacOSX</string>
+              </array>
+              <key>NSHighResolutionCapable</key>
+              <true/>
+              <key>LSApplicationCategoryType</key>
+              <string>public.app-category.utilities</string>
+          </dict>
+          </plist>
+          PLIST
+
+          ditto -c -k --sequesterRsrc --keepParent "$APP_DIR" "SWizard-${VERSION}-macos-arm64.app.zip"
 
       - name: Publish GitHub release
         uses: softprops/action-gh-release@v2
@@ -82,4 +122,4 @@ jobs:
           generate_release_notes: true
           prerelease: ${{ contains(inputs.version, '-') }}
           make_latest: ${{ inputs.make_latest }}
-          files: SWizard-${{ inputs.version }}-macos-arm64.tar.gz
+          files: SWizard-${{ inputs.version }}-macos-arm64.app.zip

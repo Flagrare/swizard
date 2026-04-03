@@ -71,8 +71,8 @@ You can publish a specific version from the **Release** workflow:
 The workflow will:
 
 - Create and push the tag if it does not exist yet
-- Build a macOS arm64 release binary
-- Upload `SWizard-<version>-macos-arm64.tar.gz` to a GitHub Release
+- Build a macOS arm64 `.app` bundle
+- Upload `SWizard-<version>-macos-arm64.app.zip` to a GitHub Release
 
 ## Usage
 
