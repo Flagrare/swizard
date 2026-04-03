@@ -52,7 +52,15 @@ jobs:
         env:
           VERSION: ${{ inputs.version }}
         run: |
+          swift build -c release --product SWizard
           BIN_PATH=$(swift build -c release --show-bin-path)
+
+          if [[ ! -f "$BIN_PATH/SWizard" ]]; then
+            echo "Expected binary not found at $BIN_PATH/SWizard"
+            ls -la "$BIN_PATH"
+            exit 1
+          fi
+
           mkdir -p dist
           cp "$BIN_PATH/SWizard" "dist/SWizard"
           chmod +x "dist/SWizard"
