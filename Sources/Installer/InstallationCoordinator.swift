@@ -256,7 +256,7 @@ public final class InstallationCoordinator {
         networkInfo = nil
     }
 
-    func log(_ message: String, level: LogLevel = .info) {
+    public func log(_ message: String, level: LogLevel = .info) {
         logs.append(LogEntry(message: message, level: level))
     }
 }

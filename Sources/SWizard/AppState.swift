@@ -77,6 +77,52 @@ final class AppState {
         _isTransferActive.value = isTransferActive
     }
 
+    private func logMTP(_ msg: String, level: DBIProtocol.LogLevel = .info) {
+        coordinator.log("[MTP] \(msg)", level: level)
+    }
+
+    private func runMTPDiagnostic() async {
+        logMTP("Starting MTP connection diagnostic...", level: .info)
+
+        // Step 1: Scan for device
+        let devices = USBDeviceScanner.findDevices(vendorID: NintendoSwitchUSB.vendorID)
+        if devices.isEmpty {
+            logMTP("No Nintendo USB device found", level: .error)
+            mtpTestResult = "FAILED — No Nintendo device found"
+            return
+        }
+        for d in devices {
+            logMTP("Found: \(d.description)", level: .info)
+        }
+
+        // Step 2: Try adapter open (includes privileged claim)
+        logMTP("Requesting admin privileges for USB claim...", level: .warning)
+        let adapter = IOUSBHostAdapter()
+        do {
+            try await adapter.open(
+                vendorID: NintendoSwitchUSB.vendorID,
+                productID: NintendoSwitchUSB.mtpProductID
+            )
+            logMTP("SUCCESS — Device and interface opened!", level: .info)
+            mtpTestResult = "SUCCESS — MTP access confirmed!"
+
+            await adapter.close()
+            logMTP("Device closed cleanly", level: .debug)
+        } catch {
+            logMTP("Open failed: \(error.localizedDescription)", level: .error)
+
+            // Extra diagnostic: check what's in IORegistry after the attempt
+            logMTP("Post-failure device scan:", level: .debug)
+            let postDevices = USBDeviceScanner.findDevices(vendorID: NintendoSwitchUSB.vendorID)
+            for d in postDevices {
+                logMTP("  Still present: \(d.description)", level: .debug)
+            }
+
+            let found = devices.map(\.description).joined(separator: ", ")
+            mtpTestResult = "FAILED — \(found). \(error.localizedDescription)"
+        }
+    }
+
     func dismissInstallHelp() {
         showInstallHelp = false
         preferences.set(true, forKey: Self.installHelpDismissedKey)
@@ -89,24 +135,7 @@ final class AppState {
     func testMTPConnection() {
         mtpTestResult = "Testing..."
         Task {
-            let adapter = IOUSBHostAdapter()
-            do {
-                try await adapter.open(
-                    vendorID: NintendoSwitchUSB.vendorID,
-                    productID: NintendoSwitchUSB.mtpProductID
-                )
-                await adapter.close()
-                mtpTestResult = "SUCCESS — IOUSBHost claimed the Switch!"
-            } catch {
-                // Auto-detect: scan for any Nintendo USB device to help debug
-                let nintendoDevices = USBDeviceScanner.findDevices(vendorID: NintendoSwitchUSB.vendorID)
-                if nintendoDevices.isEmpty {
-                    mtpTestResult = "FAILED — No Nintendo USB device found. Is the Switch connected?"
-                } else {
-                    let found = nintendoDevices.map(\.description).joined(separator: ", ")
-                    mtpTestResult = "FAILED — Found: \(found). Error: \(error.localizedDescription)"
-                }
-            }
+            await runMTPDiagnostic()
         }
     }
 }
