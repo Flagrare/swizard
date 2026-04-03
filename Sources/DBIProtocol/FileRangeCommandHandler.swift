@@ -2,6 +2,7 @@ import Foundation
 
 /// Handles CMD_FILE_RANGE: reads a chunk of a file and sends it to the Switch.
 /// Protocol flow: ACK the request → read payload → send RESPONSE header → read ACK → send file data.
+/// Reports progress via delegate after sending each chunk.
 public struct FileRangeCommandHandler: DBICommandHandler {
     public let commandID = DBICommand.fileRange
 
@@ -10,13 +11,14 @@ public struct FileRangeCommandHandler: DBICommandHandler {
     public func handle(
         header: DBIHeader,
         transport: any TransportProtocol,
-        fileServer: any FileServing
+        fileServer: any FileServing,
+        delegate: (any DBISessionDelegate)?
     ) async throws -> DBICommandResult {
-        // Step 1: ACK the FILE_RANGE request header (Switch waits for this before sending payload)
+        // Step 1: ACK the FILE_RANGE request header
         let ack = DBIHeader(commandType: .ack, commandID: .fileRange, dataSize: header.dataSize)
         try await transport.write(ack.encoded())
 
-        // Step 2: Read the variable-length payload the Switch now sends
+        // Step 2: Read the variable-length payload
         let payload = try await transport.read(maxLength: Int(header.dataSize))
         let request = try FileRangeRequest(from: payload)
 
@@ -40,6 +42,14 @@ public struct FileRangeCommandHandler: DBICommandHandler {
 
         // Step 6: Send the file data
         try await transport.write(fileData)
+
+        // Step 7: Report progress — offset + size = total bytes sent so far for this file
+        let totalOffset = request.rangeOffset + UInt64(fileData.count)
+        delegate?.sessionDidSendFileChunk(
+            fileName: request.fileName,
+            bytesInChunk: UInt32(fileData.count),
+            totalOffset: totalOffset
+        )
 
         return .continue
     }

@@ -10,12 +10,12 @@ public struct ListCommandHandler: DBICommandHandler {
     public func handle(
         header: DBIHeader,
         transport: any TransportProtocol,
-        fileServer: any FileServing
+        fileServer: any FileServing,
+        delegate: (any DBISessionDelegate)?
     ) async throws -> DBICommandResult {
         let fileListString = fileServer.fileList()
         let fileListData = Data(fileListString.utf8)
 
-        // Send RESPONSE header with file list size
         let response = DBIHeader(
             commandType: .response,
             commandID: .list,
@@ -23,11 +23,11 @@ public struct ListCommandHandler: DBICommandHandler {
         )
         try await transport.write(response.encoded())
 
-        // Wait for Switch ACK
         _ = try await transport.read(maxLength: DBIConstants.headerSize)
 
-        // Send the file list bytes
         try await transport.write(fileListData)
+
+        delegate?.sessionDidLog("Sent file list: \(fileListString.trimmingCharacters(in: .newlines))")
 
         return .continue
     }

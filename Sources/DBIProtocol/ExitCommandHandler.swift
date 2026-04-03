@@ -9,7 +9,8 @@ public struct ExitCommandHandler: DBICommandHandler {
     public func handle(
         header: DBIHeader,
         transport: any TransportProtocol,
-        fileServer: any FileServing
+        fileServer: any FileServing,
+        delegate: (any DBISessionDelegate)?
     ) async throws -> DBICommandResult {
         let response = DBIHeader(
             commandType: .response,

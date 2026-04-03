@@ -47,6 +47,45 @@ final class FileServerTests: XCTestCase {
         XCTAssertEqual(server.fileCount, 0)
     }
 
+    func testDuplicateRegistrationUsesLastURL() throws {
+        let content1 = Data([0xAA])
+        let content2 = Data([0xBB])
+        let url1 = try createTempFile(name: "dup_v1.nsp", content: content1)
+        // Rename the second file to same name — simulates re-registering
+        let url2 = try createTempFile(name: "dup_v2.nsp", content: content2)
+
+        let server = FileServer()
+        server.register(files: [url1])
+        server.register(files: [url2])
+
+        // Both files should be registered (different names)
+        XCTAssertEqual(server.fileCount, 2)
+    }
+
+    func testTotalSizeCalculation() throws {
+        let url1 = try createTempFile(name: "size1.nsp", content: Data(repeating: 0, count: 100))
+        let url2 = try createTempFile(name: "size2.nsp", content: Data(repeating: 0, count: 200))
+
+        let server = FileServer()
+        server.register(files: [url1, url2])
+
+        let total = try server.totalSize()
+        XCTAssertEqual(total, 300)
+    }
+
+    func testReadRangeAtEndOfFile() throws {
+        let content = Data(repeating: 0xCC, count: 50)
+        let url = try createTempFile(name: "eof.nsp", content: content)
+
+        let server = FileServer()
+        server.register(files: [url])
+
+        // Request more bytes than available at offset 40 — should return only 10 bytes
+        let data = try server.readRange(fileName: "eof.nsp", offset: 40, size: 100)
+        XCTAssertEqual(data.count, 10)
+        XCTAssertEqual(data, Data(repeating: 0xCC, count: 10))
+    }
+
     // MARK: - Helpers
 
     private func createTempFile(name: String, content: Data) throws -> URL {

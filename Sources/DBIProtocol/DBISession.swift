@@ -37,7 +37,8 @@ public final class DBISession: @unchecked Sendable {
             let result = try await handler.handle(
                 header: header,
                 transport: transport,
-                fileServer: fileServer
+                fileServer: fileServer,
+                delegate: delegate
             )
 
             if result == .exit {

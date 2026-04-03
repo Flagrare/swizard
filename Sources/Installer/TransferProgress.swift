@@ -38,4 +38,9 @@ public final class TransferProgress: @unchecked Sendable {
         files[index].transferredBytes = transferredBytes
         currentFileName = fileName
     }
+
+    public func clear() {
+        files.removeAll()
+        currentFileName = nil
+    }
 }
