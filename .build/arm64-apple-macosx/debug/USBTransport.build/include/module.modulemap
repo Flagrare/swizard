@@ -1,3 +1,0 @@
-module USBTransport {
-    header "/Users/storylight/Dev/swizard/.build/arm64-apple-macosx/debug/USBTransport.build/include/USBTransport-Swift.h"
-}
