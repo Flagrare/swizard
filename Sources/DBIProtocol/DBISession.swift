@@ -2,8 +2,9 @@ import Foundation
 
 /// Protocol state machine that dispatches incoming commands to handlers.
 /// Reads headers from the Switch in a loop and delegates to the appropriate handler.
-public final class DBISession: Sendable {
+public final class DBISession: @unchecked Sendable {
     private let handlers: [DBICommand: any DBICommandHandler]
+    public weak var delegate: (any DBISessionDelegate)?
 
     public init(handlers: [any DBICommandHandler]? = nil) {
         let handlerList = handlers ?? [
@@ -21,9 +22,13 @@ public final class DBISession: Sendable {
         transport: any TransportProtocol,
         fileServer: any FileServing
     ) async throws {
+        delegate?.sessionDidLog("DBI session started")
+
         while true {
             let headerData = try await transport.read(maxLength: DBIConstants.headerSize)
             let header = try DBIHeader(from: headerData)
+
+            delegate?.sessionDidLog("Received \(header.commandID) (\(header.commandType))")
 
             guard let handler = handlers[header.commandID] else {
                 throw DBIError.unknownCommand(header.commandID.rawValue)
@@ -36,6 +41,8 @@ public final class DBISession: Sendable {
             )
 
             if result == .exit {
+                delegate?.sessionDidReceiveExit()
+                delegate?.sessionDidLog("DBI session ended")
                 break
             }
         }

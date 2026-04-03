@@ -55,6 +55,12 @@ public final class InstallationCoordinator: @unchecked Sendable {
         log("Installation cancelled")
     }
 
+    public func reset() {
+        cancel()
+        state = .idle
+        logs.removeAll()
+    }
+
     // MARK: - Private
 
     private func runInstallation() async {
@@ -73,6 +79,9 @@ public final class InstallationCoordinator: @unchecked Sendable {
 
             state = .complete
             log("Installation complete!")
+        } catch is CancellationError {
+            state = .idle
+            log("Installation cancelled")
         } catch {
             state = .error(error.localizedDescription)
             log("Error: \(error.localizedDescription)")
@@ -81,7 +90,7 @@ public final class InstallationCoordinator: @unchecked Sendable {
         try? await transport.disconnect()
     }
 
-    private func log(_ message: String) {
+    func log(_ message: String) {
         let entry = LogEntry(message: message)
         logs.append(entry)
     }
