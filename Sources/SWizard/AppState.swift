@@ -6,9 +6,12 @@ import USBTransport
 @Observable
 @MainActor
 final class AppState {
+    private static let installHelpDismissedKey = "swizard.installHelp.dismissed"
+
     let coordinator = InstallationCoordinator()
     let deviceMonitor: USBDeviceMonitor
     var isDeviceConnected = false
+    var showInstallHelp: Bool
     private var monitorTask: Task<Void, Never>?
 
     /// Shared flag for device mutex — set by coordinator state changes.
@@ -17,6 +20,7 @@ final class AppState {
     init() {
         let flag = _isTransferActive
         self.deviceMonitor = USBDeviceMonitor { flag.value }
+        self.showInstallHelp = !UserDefaults.standard.bool(forKey: Self.installHelpDismissedKey)
     }
 
     var isTransferActive: Bool {
@@ -48,6 +52,11 @@ final class AppState {
     /// Call this whenever coordinator state changes to keep the mutex flag in sync.
     func updateTransferFlag() {
         _isTransferActive.value = isTransferActive
+    }
+
+    func dismissInstallHelp() {
+        showInstallHelp = false
+        UserDefaults.standard.set(true, forKey: Self.installHelpDismissedKey)
     }
 }
 

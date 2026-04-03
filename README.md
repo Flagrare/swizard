@@ -60,6 +60,13 @@ DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift test
 .build/debug/SWizard
 ```
 
+## Easy local install (no terminal)
+
+If you cloned this repo, you can use these double-click scripts:
+
+1. Run `Build-SWizard.command` (builds `build/SWizard.app`)
+2. Run `Install-SWizard.command` (copies app to `/Applications` and opens it)
+
 ## Releasing via GitHub Actions
 
 You can publish a specific version from the **Release** workflow:
@@ -72,7 +79,18 @@ The workflow will:
 
 - Create and push the tag if it does not exist yet
 - Build a macOS arm64 `.app` bundle
-- Upload `SWizard-<version>-macos-arm64.app.zip` to a GitHub Release
+- Bundle `SWizard.app` with `Install-SWizard.command`
+- Upload `SWizard-<version>-macos-arm64.zip` to a GitHub Release
+
+## Install from GitHub Release
+
+1. Download `SWizard-<version>-macos-arm64.zip` from the Release page
+2. Unzip it and run `Install-SWizard.command`
+3. If macOS still blocks launch, open Terminal once and run:
+
+```bash
+xattr -dr com.apple.quarantine "/Applications/SWizard.app"
+```
 
 ## Usage
 

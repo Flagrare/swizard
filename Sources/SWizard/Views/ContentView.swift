@@ -27,6 +27,11 @@ struct ContentView: View {
         VStack(alignment: .leading, spacing: 0) {
             ConnectionStatusView(isConnected: appState.isDeviceConnected)
 
+            if appState.showInstallHelp {
+                installHelpBanner
+                Divider()
+            }
+
             Divider()
 
             DropZoneView { urls in
@@ -44,6 +49,30 @@ struct ContentView: View {
             bottomBar
                 .padding()
         }
+    }
+
+    private var installHelpBanner: some View {
+        HStack(alignment: .top, spacing: 10) {
+            Image(systemName: "info.circle.fill")
+                .foregroundStyle(.blue)
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text("First launch tip")
+                    .font(.subheadline.weight(.semibold))
+                Text("If macOS blocks SWizard after download, run Install-SWizard.command from the release zip or use: xattr -dr com.apple.quarantine /Applications/SWizard.app")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Spacer(minLength: 8)
+
+            Button("Dismiss") {
+                appState.dismissInstallHelp()
+            }
+            .buttonStyle(.borderless)
+            .font(.caption)
+        }
+        .padding(10)
     }
 
     // MARK: - Right Panel

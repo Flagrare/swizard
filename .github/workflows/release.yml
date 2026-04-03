@@ -71,6 +71,7 @@ jobs:
 
           APP_VERSION=${VERSION#v}
           APP_DIR="dist/SWizard.app"
+          PACKAGE_DIR="dist/SWizard-${VERSION}"
           CONTENTS_DIR="$APP_DIR/Contents"
           MACOS_DIR="$CONTENTS_DIR/MacOS"
 
@@ -112,7 +113,27 @@ jobs:
           </plist>
           PLIST
 
-          ditto -c -k --sequesterRsrc --keepParent "$APP_DIR" "SWizard-${VERSION}-macos-arm64.app.zip"
+          rm -rf "$PACKAGE_DIR"
+          mkdir -p "$PACKAGE_DIR"
+          mv "$APP_DIR" "$PACKAGE_DIR/SWizard.app"
+
+          cat > "$PACKAGE_DIR/Install-SWizard.command" <<'SCRIPT'
+          #!/bin/bash
+          set -euo pipefail
+
+          ROOT_DIR="$(cd "$(dirname "$0")" && pwd)"
+          SOURCE_APP="$ROOT_DIR/SWizard.app"
+          TARGET_APP="/Applications/SWizard.app"
+
+          rm -rf "$TARGET_APP"
+          ditto "$SOURCE_APP" "$TARGET_APP"
+          xattr -dr com.apple.quarantine "$TARGET_APP" || true
+
+          open "$TARGET_APP"
+          SCRIPT
+
+          chmod +x "$PACKAGE_DIR/Install-SWizard.command"
+          ditto -c -k --sequesterRsrc --keepParent "$PACKAGE_DIR" "SWizard-${VERSION}-macos-arm64.zip"
 
       - name: Publish GitHub release
         uses: softprops/action-gh-release@v2
@@ -122,4 +143,4 @@ jobs:
           generate_release_notes: true
           prerelease: ${{ contains(inputs.version, '-') }}
           make_latest: ${{ inputs.make_latest }}
-          files: SWizard-${{ inputs.version }}-macos-arm64.app.zip
+          files: SWizard-${{ inputs.version }}-macos-arm64.zip
