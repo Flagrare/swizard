@@ -32,7 +32,7 @@ macOS Tahoe on Apple Silicon aggressively blocks MTP connections, making existin
 
 ## Architecture
 
-Built with SOLID principles, TDD (87 tests), and clean design patterns:
+Built with SOLID principles, TDD, and clean design patterns:
 
 ```
 ┌─────────────────────────────────────────┐
@@ -54,7 +54,7 @@ Built with SOLID principles, TDD (87 tests), and clean design patterns:
 
 ## Prerequisites
 
-- macOS 15+ (Sonoma or later)
+- macOS 15+
 - [Homebrew](https://brew.sh): `brew install libusb`
 - Xcode 16+ (Swift 6)
 - Nintendo Switch with [DBI](https://github.com/rashevskyv/dbi) homebrew installed
@@ -101,13 +101,16 @@ The workflow will:
 ## Install from GitHub Release (no build required)
 
 1. Download `SWizard-<version>-macos-arm64.zip` from the Release page
-2. Unzip it and run `Install-SWizard.command`
-3. Open SWizard from Applications
-4. If macOS still blocks launch, open Terminal once and run:
+2. Unzip the archive
+3. Drag `SWizard.app` into `/Applications`
+4. Open SWizard from Applications
+5. If macOS blocks launch, open Terminal once and run:
 
 ```bash
 xattr -dr com.apple.quarantine "/Applications/SWizard.app"
 ```
+
+Optional helper: the archive also includes `Install-SWizard.command` for automated copy/install.
 
 ## Use with Nintendo Switch (DBI)
 
