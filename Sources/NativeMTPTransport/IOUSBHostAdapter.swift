@@ -96,10 +96,11 @@ public final class IOUSBHostAdapter: USBBulkTransferProtocol, @unchecked Sendabl
         let device = try openDevice(service: deviceInfo.service)
         self.hostDevice = device
 
-        // Step 3: Configure device to create interface children
-        try device.__configure(withValue: 1, matchInterfaces: true)
+        // Step 3: Configure device WITHOUT auto-matching interfaces
+        // matchInterfaces:false prevents AppleUSBHostCompositeDevice from claiming
+        try device.__configure(withValue: 1, matchInterfaces: false)
 
-        // Step 4: Wait for interface matching
+        // Step 4: Wait for interface services to appear
         Thread.sleep(forTimeInterval: 1.0)
 
         // Step 5: Find interface child — re-scan IORegistry since configure created new services
