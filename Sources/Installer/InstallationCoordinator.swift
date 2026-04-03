@@ -59,8 +59,10 @@ public final class InstallationCoordinator {
         sessionDelegateAdapter.onLog = { [weak self] message, level in
             Task { @MainActor in self?.log(message, level: level) }
         }
-        sessionDelegateAdapter.onFileChunk = { [weak self] fileName, _, totalOffset in
-            Task { @MainActor in self?.progress.updateProgress(fileName: fileName, transferredBytes: totalOffset) }
+        sessionDelegateAdapter.onFileChunk = { [weak self] fileName, bytesInChunk, _ in
+            Task { @MainActor in
+                self?.progress.applyChunk(fileName: fileName, bytesInChunk: bytesInChunk)
+            }
         }
 
         installTask = Task { [weak self] in

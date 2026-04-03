@@ -80,4 +80,27 @@ final class TransferProgressTests: XCTestCase {
 
         XCTAssertEqual(progress.files[0].fraction, 0)
     }
+
+    func testApplyChunkAddsBytesWithoutUsingAbsoluteOffset() {
+        let progress = TransferProgress()
+        progress.register(name: "game.nsp", totalBytes: 1000)
+
+        progress.applyChunk(fileName: "game.nsp", bytesInChunk: 100)
+        progress.applyChunk(fileName: "game.nsp", bytesInChunk: 100)
+
+        XCTAssertEqual(progress.files[0].transferredBytes, 200)
+        XCTAssertEqual(progress.files[0].fraction, 0.2)
+    }
+
+    func testApplyChunkCapsProgressAtTotalBytes() {
+        let progress = TransferProgress()
+        progress.register(name: "game.nsp", totalBytes: 1000)
+
+        progress.applyChunk(fileName: "game.nsp", bytesInChunk: 900)
+        progress.applyChunk(fileName: "game.nsp", bytesInChunk: 500)
+
+        XCTAssertEqual(progress.files[0].transferredBytes, 1000)
+        XCTAssertEqual(progress.files[0].fraction, 1.0)
+        XCTAssertTrue(progress.files[0].isComplete)
+    }
 }

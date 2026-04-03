@@ -41,6 +41,21 @@ public final class TransferProgress: @unchecked Sendable {
         files[index].transferredBytes = transferredBytes
         currentFileName = fileName
 
+        refreshStats()
+    }
+
+    public func applyChunk(fileName: String, bytesInChunk: UInt32) {
+        guard let index = files.firstIndex(where: { $0.name == fileName }) else { return }
+
+        let current = files[index].transferredBytes
+        let next = current + UInt64(bytesInChunk)
+        files[index].transferredBytes = min(next, files[index].totalBytes)
+        currentFileName = fileName
+
+        refreshStats()
+    }
+
+    private func refreshStats() {
         // Update speed calculator
         if speedCalculator == nil {
             speedCalculator = SpeedCalculator()
