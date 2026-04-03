@@ -35,7 +35,7 @@ struct FileRowView: View {
         if file.isComplete {
             return "Done"
         } else if file.transferredBytes > 0 {
-            return "\(Int(file.fraction * 100))%"
+            return "\(Int(file.fraction * 100))% · \(formatBytes(file.transferredBytes))"
         } else {
             return formatBytes(file.totalBytes)
         }

@@ -99,11 +99,24 @@ struct ContentView: View {
             }
 
         case .transferring:
+            let stats = appState.coordinator.progress.overallStats
             HStack(spacing: 8) {
                 ProgressView(value: appState.coordinator.progress.overallFraction)
-                    .frame(width: 100)
+                    .frame(width: 80)
                 Text("\(Int(appState.coordinator.progress.overallFraction * 100))%")
-                    .font(.system(.body, design: .monospaced))
+                    .font(.system(.caption, design: .monospaced))
+
+                if stats.bytesPerSecond > 0 {
+                    Text(stats.formattedSpeed)
+                        .font(.system(.caption, design: .monospaced))
+                        .foregroundStyle(.secondary)
+                }
+
+                if let eta = stats.formattedETA {
+                    Text(eta)
+                        .font(.system(.caption, design: .monospaced))
+                        .foregroundStyle(.secondary)
+                }
 
                 Button("Cancel") {
                     appState.coordinator.cancel()

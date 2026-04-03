@@ -1,6 +1,6 @@
 import Foundation
 
-/// Tracks per-file and overall transfer progress.
+/// Tracks per-file and overall transfer progress with speed/ETA.
 @Observable
 public final class TransferProgress: @unchecked Sendable {
     public struct FileProgress: Identifiable, Sendable {
@@ -19,6 +19,9 @@ public final class TransferProgress: @unchecked Sendable {
 
     public var files: [FileProgress] = []
     public var currentFileName: String?
+    public var overallStats: TransferStats = .zero
+
+    private var speedCalculator: SpeedCalculator?
 
     public var overallFraction: Double {
         let totalBytes = files.reduce(0) { $0 + $1.totalBytes }
@@ -37,10 +40,27 @@ public final class TransferProgress: @unchecked Sendable {
         guard let index = files.firstIndex(where: { $0.name == fileName }) else { return }
         files[index].transferredBytes = transferredBytes
         currentFileName = fileName
+
+        // Update speed calculator
+        if speedCalculator == nil {
+            speedCalculator = SpeedCalculator()
+        }
+
+        let totalTransferred = files.reduce(0) { $0 + $1.transferredBytes }
+        let totalBytes = files.reduce(0) { $0 + $1.totalBytes }
+        let remaining = totalBytes > totalTransferred ? totalBytes - totalTransferred : 0
+
+        speedCalculator?.addSample(totalBytes: totalTransferred)
+        overallStats = speedCalculator?.currentStats(
+            totalBytes: totalTransferred,
+            remainingBytes: remaining
+        ) ?? .zero
     }
 
     public func clear() {
         files.removeAll()
         currentFileName = nil
+        speedCalculator = nil
+        overallStats = .zero
     }
 }
