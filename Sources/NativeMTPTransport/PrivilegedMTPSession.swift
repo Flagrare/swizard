@@ -234,7 +234,7 @@ public final class PrivilegedMTPSession: @unchecked Sendable {
             let storageTx = nextTx()
             try writeContainer(buildCmd(code: 0x1004, tx: storageTx))
             let storageData = try readContainer() // Data phase
-            let storageResp = try readContainer() // Response phase
+            let _ = try readContainer() // Response phase
             print("LOG:Got storage IDs")
 
             // Parse storage IDs from data container
@@ -244,7 +244,7 @@ public final class PrivilegedMTPSession: @unchecked Sendable {
                 if payload.count >= 8 {
                     // First 4 bytes = array count, next 4 bytes = first storage ID
                     var sid: UInt32 = 0
-                    withUnsafeMutableBytes(of: &sid) { payload.dropFirst(4).copyBytes(to: $0) }
+                    _ = withUnsafeMutableBytes(of: &sid) { payload.dropFirst(4).copyBytes(to: $0) }
                     storageID = UInt32(littleEndian: sid)
                 }
             }
@@ -253,7 +253,7 @@ public final class PrivilegedMTPSession: @unchecked Sendable {
             // MTP GetObjectHandles to find install folder
             let handlesTx = nextTx()
             try writeContainer(buildCmd(code: 0x1007, tx: handlesTx, params: [storageID, 0, 0xFFFFFFFF]))
-            let handlesData = try readContainer()
+            let _ = try readContainer() // handles data
             let _ = try readContainer() // response
             print("LOG:Got object handles")
 
