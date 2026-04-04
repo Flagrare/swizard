@@ -405,19 +405,22 @@ public final class PrivilegedMTPSession: @unchecked Sendable {
                 }
                 print("LOG:ObjectInfo sent for \\(file.name)")
 
-                // SendObject — MTP: Command, then Data container (header + all file data streamed)
+                // SendObject — libmtp sends command first, then data container
                 let objTx = nextTx()
 
-                // 1. Send SendObject command
-                print("LOG:Sending SendObject command (tx=\\(objTx))...")
-                try writeContainer(buildCmd(code: 0x100D, tx: objTx))
-                print("LOG:SendObject command sent")
-
-                // 2. Open file and prepare data container
+                // Open file
                 let handle = try FileHandle(forReadingFrom: URL(fileURLWithPath: file.path))
                 defer { handle.closeFile() }
 
-                // 3. Send data container header (12 bytes) SEPARATELY first
+                // 1. Send SendObject COMMAND container (12 bytes, no params)
+                let objCmd = buildCmd(code: 0x100D, tx: objTx)
+                print("LOG:Sending SendObject command (\\(objCmd.count) bytes, tx=\\(objTx))...")
+                let cmdMD = NSMutableData(data: objCmd)
+                var cmdBW: Int = 0
+                try outP.__sendIORequest(with: cmdMD, bytesTransferred: &cmdBW, completionTimeout: 10.0)
+                print("LOG:SendObject command sent (\\(cmdBW) bytes)")
+
+                // 2. Build DATA container header
                 var dataHeader = Data()
                 let containerLen = UInt32(min(UInt64(12) + file.size, UInt64(UInt32.max)))
                 withUnsafeBytes(of: containerLen.littleEndian) { dataHeader.append(contentsOf: $0) }
@@ -425,33 +428,20 @@ public final class PrivilegedMTPSession: @unchecked Sendable {
                 withUnsafeBytes(of: UInt16(0x100D).littleEndian) { dataHeader.append(contentsOf: $0) }
                 withUnsafeBytes(of: objTx.littleEndian) { dataHeader.append(contentsOf: $0) }
 
-                // Helper: send data in small chunks via the bulk OUT pipe
-                // IOUSBHost may not handle large single transfers well
-                func sendRawData(_ data: Data) throws {
-                    let pipeChunk = 16384 // 16KB per USB transfer
-                    var offset = 0
-                    while offset < data.count {
-                        let end = min(offset + pipeChunk, data.count)
-                        let slice = data[offset..<end]
-                        let md = NSMutableData(data: Data(slice))
-                        var bw: Int = 0
-                        try outP.__sendIORequest(with: md, bytesTransferred: &bw, completionTimeout: 10.0)
-                        offset += bw
-                    }
-                }
+                // Send data container header + ALL file data as one logical transfer
+                // Use writeContainer for the header, then writeContainer for each chunk
+                print("LOG:Sending data container header (\\(dataHeader.count) bytes)...")
+                try writeContainer(dataHeader)
+                print("LOG:Data header sent")
 
-                // Send data container header (12 bytes)
-                print("LOG:Sending data container header...")
-                try sendRawData(dataHeader)
-
-                // Stream file data in 256KB read chunks, sent as 16KB USB transfers
+                // Stream file data in 256KB chunks
                 let readChunkSize = 262144
                 var totalSent: UInt64 = 0
 
                 while totalSent < file.size {
                     let chunk = handle.readData(ofLength: readChunkSize)
                     if chunk.isEmpty { break }
-                    try sendRawData(chunk)
+                    try writeContainer(chunk)
                     totalSent += UInt64(chunk.count)
                     print("PROGRESS:\\(file.name):\\(totalSent):\\(file.size)")
                 }
