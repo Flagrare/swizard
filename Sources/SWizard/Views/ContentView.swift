@@ -86,7 +86,7 @@ struct ContentView: View {
     private var transportModePicker: some View {
         Picker("Mode", selection: Binding(
             get: { appState.coordinator.transportMode },
-            set: { appState.coordinator.transportMode = $0 }
+            set: { appState.setTransportMode($0) }
         )) {
             ForEach(InstallationCoordinator.TransportMode.allCases, id: \.self) { mode in
                 Text(mode.rawValue).tag(mode)

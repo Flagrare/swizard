@@ -172,6 +172,70 @@ final class AppStateTests: XCTestCase {
         XCTAssertFalse(state.isDeviceConnected)
     }
 
+    // MARK: - FTP address persistence
+
+    func testSuccessfulConnectSavesAddress() {
+        let store = InMemoryPreferencesStore()
+        let state = AppState(preferences: store)
+        state.coordinator.transportMode = .network
+        state.coordinator.ftpAddress = "192.168.0.96:5000"
+
+        state.validateFTPAddress()
+
+        // Address should be persisted for next launch
+        XCTAssertEqual(store.string(forKey: "swizard.ftp.lastAddress"), "192.168.0.96:5000")
+    }
+
+    func testPreviousAddressRestoredOnLaunch() {
+        let store = InMemoryPreferencesStore()
+        store.setString("10.0.0.5:6000", forKey: "swizard.ftp.lastAddress")
+
+        let state = AppState(preferences: store)
+        state.coordinator.transportMode = .network
+
+        // Should pre-fill the FTP address from last session
+        XCTAssertEqual(state.coordinator.ftpAddress, "10.0.0.5:6000")
+    }
+
+    // MARK: - Transport mode persistence
+
+    func testTransportModeSavedOnChange() {
+        let store = InMemoryPreferencesStore()
+        let state = AppState(preferences: store)
+
+        state.setTransportMode(.dbiBackend)
+        XCTAssertEqual(store.string(forKey: "swizard.transportMode"), "DBI Backend")
+
+        state.setTransportMode(.network)
+        XCTAssertEqual(store.string(forKey: "swizard.transportMode"), "Network")
+    }
+
+    func testTransportModeRestoredOnLaunch() {
+        let store = InMemoryPreferencesStore()
+        store.setString("DBI Backend", forKey: "swizard.transportMode")
+
+        let state = AppState(preferences: store)
+        XCTAssertEqual(state.coordinator.transportMode, .dbiBackend)
+    }
+
+    func testDefaultTransportModeIsMTP() {
+        let store = InMemoryPreferencesStore()
+        // No saved preference
+        let state = AppState(preferences: store)
+        XCTAssertEqual(state.coordinator.transportMode, .mtp)
+    }
+
+    func testFailedValidationDoesNotSaveAddress() {
+        let store = InMemoryPreferencesStore()
+        let state = AppState(preferences: store)
+        state.coordinator.transportMode = .network
+        state.coordinator.ftpAddress = "invalid:abc"
+
+        state.validateFTPAddress()
+
+        XCTAssertNil(store.string(forKey: "swizard.ftp.lastAddress"))
+    }
+
     // MARK: - Copy logs
 
     func testCopyLogsReturnsFormattedString() {
@@ -262,14 +326,23 @@ private final class MockMTPSessionForAppState: MTPSessionProtocol, @unchecked Se
 }
 
 private final class InMemoryPreferencesStore: PreferencesStore {
-    private var values: [String: Bool] = [:]
+    private var boolValues: [String: Bool] = [:]
+    private var stringValues: [String: String] = [:]
 
     func bool(forKey defaultName: String) -> Bool {
-        values[defaultName] ?? false
+        boolValues[defaultName] ?? false
     }
 
     func set(_ value: Bool, forKey defaultName: String) {
-        values[defaultName] = value
+        boolValues[defaultName] = value
+    }
+
+    func string(forKey defaultName: String) -> String? {
+        stringValues[defaultName]
+    }
+
+    func setString(_ value: String, forKey defaultName: String) {
+        stringValues[defaultName] = value
     }
 }
 

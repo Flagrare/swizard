@@ -10,15 +10,23 @@ import DBIProtocol
 protocol PreferencesStore {
     func bool(forKey defaultName: String) -> Bool
     func set(_ value: Bool, forKey defaultName: String)
+    func string(forKey defaultName: String) -> String?
+    func setString(_ value: String, forKey defaultName: String)
 }
 
-extension UserDefaults: PreferencesStore {}
+extension UserDefaults: PreferencesStore {
+    func setString(_ value: String, forKey defaultName: String) {
+        set(value, forKey: defaultName)
+    }
+}
 
 /// Top-level observable state for the app.
 @Observable
 @MainActor
 final class AppState {
     private static let installHelpDismissedKey = "swizard.installHelp.dismissed"
+    private static let lastFTPAddressKey = "swizard.ftp.lastAddress"
+    private static let lastTransportModeKey = "swizard.transportMode"
 
     let coordinator = InstallationCoordinator()
     let deviceMonitor: USBDeviceMonitor
@@ -51,6 +59,17 @@ final class AppState {
         }
         self.deviceMonitor = USBDeviceMonitor { flag.value }
         self.showInstallHelp = !preferences.bool(forKey: Self.installHelpDismissedKey)
+
+        // Restore last FTP address
+        if let lastAddress = preferences.string(forKey: Self.lastFTPAddressKey) {
+            coordinator.ftpAddress = lastAddress
+        }
+
+        // Restore last transport mode
+        if let savedMode = preferences.string(forKey: Self.lastTransportModeKey),
+           let mode = InstallationCoordinator.TransportMode.allCases.first(where: { $0.rawValue == savedMode }) {
+            coordinator.transportMode = mode
+        }
     }
 
     var isTransferActive: Bool {
@@ -238,6 +257,13 @@ final class AppState {
 
         ftpValidationError = nil
         ftpAddressValidated = true
+        preferences.setString(address, forKey: Self.lastFTPAddressKey)
+    }
+
+    /// Change transport mode and persist the choice.
+    func setTransportMode(_ mode: InstallationCoordinator.TransportMode) {
+        coordinator.transportMode = mode
+        preferences.setString(mode.rawValue, forKey: Self.lastTransportModeKey)
     }
 
     // MARK: - MTP Connection Test
