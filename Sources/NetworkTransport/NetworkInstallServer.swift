@@ -58,7 +58,8 @@ public final class NetworkInstallServer: @unchecked Sendable {
             )
 
             if result == 0 {
-                address = String(cString: hostname)
+                let nullIndex = hostname.firstIndex(of: 0) ?? hostname.endIndex
+                address = String(decoding: hostname[..<nullIndex].map { UInt8(bitPattern: $0) }, as: UTF8.self)
                 break
             }
         }

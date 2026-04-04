@@ -84,7 +84,7 @@ private extension Data {
     func loadUInt16(at offset: Int) -> UInt16 {
         var value: UInt16 = 0
         let start = startIndex + offset
-        Swift.withUnsafeMutableBytes(of: &value) { dest in
+        _ = Swift.withUnsafeMutableBytes(of: &value) { dest in
             copyBytes(to: dest, from: start..<start + 2)
         }
         return UInt16(littleEndian: value)
@@ -93,7 +93,7 @@ private extension Data {
     func loadUInt32(at offset: Int) -> UInt32 {
         var value: UInt32 = 0
         let start = startIndex + offset
-        Swift.withUnsafeMutableBytes(of: &value) { dest in
+        _ = Swift.withUnsafeMutableBytes(of: &value) { dest in
             copyBytes(to: dest, from: start..<start + 4)
         }
         return UInt32(littleEndian: value)
