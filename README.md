@@ -12,7 +12,7 @@
 
 The most complete and reliable macOS app for installing Nintendo Switch games — **3 transport modes**, works on Apple Silicon + macOS Tahoe where other tools fail.
 
-![SWizard](./Assets/swizard.gif)
+![SWizard](./Assets/swizard-demo.gif)
 
 ## Why
 
