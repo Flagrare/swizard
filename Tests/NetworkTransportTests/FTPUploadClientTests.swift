@@ -38,6 +38,18 @@ final class FTPUploadClientTests: XCTestCase {
         XCTAssertTrue(args.contains("--disable-epsv"))
     }
 
+    func testCurlArgumentsDisableGlobbing() {
+        let client = FTPUploadClient()
+        let connection = FTPConnectionInfo(host: "192.168.0.96", port: 5000)
+        let file = URL(fileURLWithPath: "/tmp/game [v0].nsz")
+
+        let args = client.buildCurlArguments(file: file, connection: connection)
+
+        // curl treats [...] as glob ranges — must disable with --globoff
+        XCTAssertTrue(args.contains("--globoff") || args.contains("-g"),
+                       "Must disable curl globbing for filenames with brackets")
+    }
+
     func testCurlArgumentsUseEncodedURL() {
         let client = FTPUploadClient()
         let connection = FTPConnectionInfo(host: "192.168.0.96", port: 5000)

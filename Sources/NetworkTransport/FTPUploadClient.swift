@@ -18,6 +18,7 @@ public final class FTPUploadClient: FTPUploadClientProtocol, @unchecked Sendable
             "--disable-epsv",   // DBI doesn't support EPSV
             "--progress-bar",   // Enable progress output for parsing
             "--ftp-pasv",       // Force PASV mode
+            "--globoff",        // Disable [...] glob pattern interpretation
         ]
     }
 
