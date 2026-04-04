@@ -308,42 +308,44 @@ public final class PrivilegedMTPSession: @unchecked Sendable {
                 let _ = try readContainer() // response
                 print("LOG:ObjectInfo sent for \\(file.name)")
 
-                // SendObject
+                // SendObject — MTP requires: Command container, then Data container (header + all data), then read Response
                 let objTx = nextTx()
+
+                // 1. Send SendObject command
                 try writeContainer(buildCmd(code: 0x100D, tx: objTx))
 
-                // Stream file data in chunks as data container
+                // 2. Build data container header (12 bytes) + stream file data
                 let handle = try FileHandle(forReadingFrom: URL(fileURLWithPath: file.path))
                 defer { handle.closeFile() }
 
-                let chunkSize = 1024 * 1024 // 1MB
+                // Send data container header first
+                var dataHeader = Data()
+                let containerLen = UInt32(min(UInt64(12) + file.size, UInt64(UInt32.max)))
+                withUnsafeBytes(of: containerLen.littleEndian) { dataHeader.append(contentsOf: $0) }
+                withUnsafeBytes(of: UInt16(2).littleEndian) { dataHeader.append(contentsOf: $0) } // Data type
+                withUnsafeBytes(of: UInt16(0x100D).littleEndian) { dataHeader.append(contentsOf: $0) }
+                withUnsafeBytes(of: objTx.littleEndian) { dataHeader.append(contentsOf: $0) }
+
+                let headerMD = NSMutableData(data: dataHeader)
+                var headerBW: Int = 0
+                try outP.__sendIORequest(with: headerMD, bytesTransferred: &headerBW, completionTimeout: 10.0)
+
+                // 3. Stream file data in chunks (raw, no container headers)
+                let chunkSize = 512 * 1024 // 512KB chunks for reliability
                 var totalSent: UInt64 = 0
 
-                // First chunk includes the data container header
-                let firstChunk = handle.readData(ofLength: chunkSize)
-                var dataContainer = Data()
-                let containerLen = UInt32(12 + file.size)
-                withUnsafeBytes(of: containerLen.littleEndian) { dataContainer.append(contentsOf: $0) }
-                withUnsafeBytes(of: UInt16(2).littleEndian) { dataContainer.append(contentsOf: $0) } // Data
-                withUnsafeBytes(of: UInt16(0x100D).littleEndian) { dataContainer.append(contentsOf: $0) }
-                withUnsafeBytes(of: objTx.littleEndian) { dataContainer.append(contentsOf: $0) }
-                dataContainer.append(firstChunk)
-                try writeContainer(dataContainer)
-                totalSent += UInt64(firstChunk.count)
-                print("PROGRESS:\\(file.name):\\(totalSent):\\(file.size)")
-
-                // Remaining chunks (raw data, no container header)
                 while totalSent < file.size {
                     let chunk = handle.readData(ofLength: chunkSize)
                     if chunk.isEmpty { break }
                     let md = NSMutableData(data: chunk)
                     var bw: Int = 0
                     try outP.__sendIORequest(with: md, bytesTransferred: &bw, completionTimeout: 30.0)
-                    totalSent += UInt64(chunk.count)
+                    totalSent += UInt64(bw)
                     print("PROGRESS:\\(file.name):\\(totalSent):\\(file.size)")
                 }
 
-                let _ = try readContainer() // response
+                // 4. Read SendObject response
+                let _ = try readContainer()
                 print("LOG:\\(file.name) installed")
             }
 
