@@ -343,21 +343,35 @@ public final class PrivilegedMTPSession: @unchecked Sendable {
                 let infoTx = nextTx()
                 try writeContainer(buildCmd(code: 0x100C, tx: infoTx, params: [installStorageID, 0xFFFFFFFF]))
 
-                // Build ObjectInfo dataset
+                // Build ObjectInfo dataset (MTP spec, matches libmtp ptp-pack.c)
                 var objInfo = Data()
-                withUnsafeBytes(of: installStorageID.littleEndian) { objInfo.append(contentsOf: $0) } // StorageID
-                withUnsafeBytes(of: UInt16(0x3000).littleEndian) { objInfo.append(contentsOf: $0) } // ObjectFormat (undefined)
-                withUnsafeBytes(of: UInt16(0).littleEndian) { objInfo.append(contentsOf: $0) } // ProtectionStatus
-                withUnsafeBytes(of: UInt32(file.size > UInt32.max ? 0xFFFFFFFF : UInt32(file.size)).littleEndian) { objInfo.append(contentsOf: $0) } // ObjectCompressedSize
-                // Pad remaining fields
-                objInfo.append(Data(repeating: 0, count: 38)) // thumb format, dimensions, etc.
-                // Filename as MTP string
+                withUnsafeBytes(of: installStorageID.littleEndian) { objInfo.append(contentsOf: $0) }  // 0x00: StorageID (4B)
+                withUnsafeBytes(of: UInt16(0x3001).littleEndian) { objInfo.append(contentsOf: $0) }    // 0x04: ObjectFormat = Undefined Object (2B)
+                withUnsafeBytes(of: UInt16(0).littleEndian) { objInfo.append(contentsOf: $0) }          // 0x06: ProtectionStatus (2B)
+                let compSize = UInt32(file.size > UInt64(UInt32.max) ? UInt32.max : UInt32(file.size))
+                withUnsafeBytes(of: compSize.littleEndian) { objInfo.append(contentsOf: $0) }           // 0x08: ObjectCompressedSize (4B)
+                withUnsafeBytes(of: UInt16(0).littleEndian) { objInfo.append(contentsOf: $0) }          // 0x0C: ThumbFormat (2B)
+                withUnsafeBytes(of: UInt32(0).littleEndian) { objInfo.append(contentsOf: $0) }          // 0x0E: ThumbCompressedSize (4B)
+                withUnsafeBytes(of: UInt32(0).littleEndian) { objInfo.append(contentsOf: $0) }          // 0x12: ThumbPixWidth (4B)
+                withUnsafeBytes(of: UInt32(0).littleEndian) { objInfo.append(contentsOf: $0) }          // 0x16: ThumbPixHeight (4B)
+                withUnsafeBytes(of: UInt32(0).littleEndian) { objInfo.append(contentsOf: $0) }          // 0x1A: ImagePixWidth (4B)
+                withUnsafeBytes(of: UInt32(0).littleEndian) { objInfo.append(contentsOf: $0) }          // 0x1E: ImagePixHeight (4B)
+                withUnsafeBytes(of: UInt32(0).littleEndian) { objInfo.append(contentsOf: $0) }          // 0x22: ImageBitDepth (4B)
+                withUnsafeBytes(of: UInt32(0xFFFFFFFF).littleEndian) { objInfo.append(contentsOf: $0) } // 0x26: ParentObject = root (4B)
+                withUnsafeBytes(of: UInt16(0).littleEndian) { objInfo.append(contentsOf: $0) }          // 0x2A: AssociationType (2B)
+                withUnsafeBytes(of: UInt32(0).littleEndian) { objInfo.append(contentsOf: $0) }          // 0x2C: AssociationDesc (4B)
+                withUnsafeBytes(of: UInt32(0).littleEndian) { objInfo.append(contentsOf: $0) }          // 0x30: SequenceNumber (4B)
+                // 0x34: Filename as MTP string (UCS-2/UTF-16LE)
                 let nameUTF16 = Array(file.name.utf16)
-                objInfo.append(UInt8(nameUTF16.count + 1)) // String length including null
+                objInfo.append(UInt8(nameUTF16.count + 1)) // String length including null terminator
                 for ch in nameUTF16 {
                     withUnsafeBytes(of: ch.littleEndian) { objInfo.append(contentsOf: $0) }
                 }
                 objInfo.append(contentsOf: [0x00, 0x00]) // null terminator
+                // Capture date, Modification date, Keywords — empty MTP strings
+                objInfo.append(0x00) // CaptureDate empty string
+                objInfo.append(0x00) // ModificationDate empty string
+                objInfo.append(0x00) // Keywords empty string
 
                 // Send as data container
                 let infoLen = UInt32(12 + objInfo.count)
@@ -368,28 +382,39 @@ public final class PrivilegedMTPSession: @unchecked Sendable {
                 withUnsafeBytes(of: infoTx.littleEndian) { infoContainer.append(contentsOf: $0) }
                 infoContainer.append(objInfo)
                 try writeContainer(infoContainer)
-                let _ = try readContainer() // response
+                let infoResp = try readContainer() // response
+                // Log the response code (bytes 6-7 of container)
+                if infoResp.count >= 8 {
+                    var respCode: UInt16 = 0
+                    _ = withUnsafeMutableBytes(of: &respCode) { infoResp.dropFirst(6).copyBytes(to: $0) }
+                    respCode = UInt16(littleEndian: respCode)
+                    print("LOG:SendObjectInfo response: 0x\\(String(respCode, radix: 16))")
+                    if respCode != 0x2001 { print("ERROR:SendObjectInfo rejected with code 0x\\(String(respCode, radix: 16))"); exit(1) }
+                }
                 print("LOG:ObjectInfo sent for \\(file.name)")
 
-                // SendObject — MTP requires: Command container, then Data container (header + all data), then read Response
+                // SendObject — MTP: Command container, then Data container (header + first chunk together), then remaining chunks
                 let objTx = nextTx()
 
                 // 1. Send SendObject command
                 try writeContainer(buildCmd(code: 0x100D, tx: objTx))
 
-                // 2. Build data container header (12 bytes) + stream file data
+                // 2. Build data container header + first chunk TOGETHER in one USB transfer
                 let handle = try FileHandle(forReadingFrom: URL(fileURLWithPath: file.path))
                 defer { handle.closeFile() }
 
-                // Send data container header first
-                var dataHeader = Data()
-                let containerLen = UInt32(min(UInt64(12) + file.size, UInt64(UInt32.max)))
-                withUnsafeBytes(of: containerLen.littleEndian) { dataHeader.append(contentsOf: $0) }
-                withUnsafeBytes(of: UInt16(2).littleEndian) { dataHeader.append(contentsOf: $0) } // Data type
-                withUnsafeBytes(of: UInt16(0x100D).littleEndian) { dataHeader.append(contentsOf: $0) }
-                withUnsafeBytes(of: objTx.littleEndian) { dataHeader.append(contentsOf: $0) }
+                let chunkSize = 512 * 1024
+                let firstChunk = handle.readData(ofLength: chunkSize)
 
-                let headerMD = NSMutableData(data: dataHeader)
+                var dataPacket = Data()
+                let containerLen = UInt32(min(UInt64(12) + file.size, UInt64(UInt32.max)))
+                withUnsafeBytes(of: containerLen.littleEndian) { dataPacket.append(contentsOf: $0) }
+                withUnsafeBytes(of: UInt16(2).littleEndian) { dataPacket.append(contentsOf: $0) } // Data type
+                withUnsafeBytes(of: UInt16(0x100D).littleEndian) { dataPacket.append(contentsOf: $0) }
+                withUnsafeBytes(of: objTx.littleEndian) { dataPacket.append(contentsOf: $0) }
+                dataPacket.append(firstChunk) // header + first chunk in one transfer
+
+                let headerMD = NSMutableData(data: dataPacket)
                 var headerBW: Int = 0
                 try outP.__sendIORequest(with: headerMD, bytesTransferred: &headerBW, completionTimeout: 10.0)
 

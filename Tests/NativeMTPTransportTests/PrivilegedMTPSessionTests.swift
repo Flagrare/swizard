@@ -82,6 +82,27 @@ final class PrivilegedMTPSessionTests: XCTestCase {
                        "Script should prefer SD install storage")
     }
 
+    func testScriptObjectInfoUsesCorrectFormat() {
+        let script = PrivilegedMTPSession.buildScript(
+            vendorID: NintendoSwitchUSB.vendorID,
+            productID: NintendoSwitchUSB.mtpProductID,
+            files: [PrivilegedMTPSession.FileToInstall(path: "/tmp/t.nsp", name: "t.nsp", size: 100)]
+        )
+
+        // ObjectFormat must be 0x3001 (generic file), not 0x3000 (undefined)
+        XCTAssertTrue(script.contains("0x3001"), "ObjectFormat should be 0x3001 (Undefined Object)")
+        XCTAssertFalse(script.contains("0x3000"), "ObjectFormat 0x3000 is wrong")
+
+        // ParentObject must be set to 0xFFFFFFFF (root)
+        XCTAssertTrue(script.contains("ParentObject"))
+
+        // ObjectInfo must include all required fields (53 bytes fixed + filename)
+        XCTAssertTrue(script.contains("ThumbFormat"))
+        XCTAssertTrue(script.contains("ImageBitDepth"))
+        XCTAssertTrue(script.contains("AssociationType"))
+        XCTAssertTrue(script.contains("SequenceNumber"))
+    }
+
     func testScriptUsesHasSuffixNotContainsForInstallMatch() {
         let script = PrivilegedMTPSession.buildScript(
             vendorID: NintendoSwitchUSB.vendorID,
