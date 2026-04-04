@@ -72,6 +72,18 @@ final class PrivilegedMTPSessionTests: XCTestCase {
         XCTAssertTrue(script.contains("DeviceCapture"))
     }
 
+    func testScriptWithEmptyFilesCompiles() {
+        let script = PrivilegedMTPSession.buildScript(
+            vendorID: NintendoSwitchUSB.vendorID,
+            productID: NintendoSwitchUSB.mtpProductID,
+            files: []
+        )
+
+        // Empty files should produce valid Swift — no type inference issue
+        XCTAssertTrue(script.contains("let files: [FileEntry] = []"))
+        XCTAssertFalse(script.contains(".map"))
+    }
+
     func testScriptIncludesVIDPID() {
         let script = PrivilegedMTPSession.buildScript(
             vendorID: 0x057E,

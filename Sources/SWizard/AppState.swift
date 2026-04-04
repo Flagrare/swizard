@@ -1,4 +1,5 @@
 import Foundation
+import AppKit
 import os
 import Installer
 import USBTransport
@@ -121,6 +122,29 @@ final class AppState {
     func dismissInstallHelp() {
         showInstallHelp = false
         preferences.set(true, forKey: Self.installHelpDismissedKey)
+    }
+
+    // MARK: - Copy Logs
+
+    /// Formats all activity log entries as a string and copies to clipboard.
+    @discardableResult
+    func copyLogsToString() -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "HH:mm:ss"
+
+        let text = coordinator.logs.map { entry in
+            let level = "[\(String(describing: entry.level).uppercased())]"
+            let time = formatter.string(from: entry.timestamp)
+            return "\(time) \(level) \(entry.message)"
+        }.joined(separator: "\n")
+
+        return text
+    }
+
+    func copyLogsToClipboard() {
+        let text = copyLogsToString()
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(text, forType: .string)
     }
 
     // MARK: - MTP Connection Test

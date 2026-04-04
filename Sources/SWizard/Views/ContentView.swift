@@ -161,10 +161,24 @@ struct ContentView: View {
 
     private var rightPanel: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Text("Activity Log")
-                .font(.headline)
-                .padding(.horizontal)
-                .padding(.vertical, 8)
+            HStack {
+                Text("Activity Log")
+                    .font(.headline)
+
+                Spacer()
+
+                Button {
+                    appState.copyLogsToClipboard()
+                } label: {
+                    Image(systemName: "doc.on.doc")
+                        .font(.caption)
+                }
+                .buttonStyle(.borderless)
+                .help("Copy logs to clipboard")
+                .disabled(appState.coordinator.logs.isEmpty)
+            }
+            .padding(.horizontal)
+            .padding(.vertical, 8)
 
             Divider()
 

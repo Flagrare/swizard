@@ -111,7 +111,7 @@ public final class PrivilegedMTPSession: @unchecked Sendable {
         files: [FileToInstall]
     ) -> String {
         let fileEntries = files.map { file in
-            "(path: \"\(file.path)\", name: \"\(file.name)\", size: \(file.size))"
+            "FileEntry(path: \"\(file.path)\", name: \"\(file.name)\", size: \(file.size))"
         }.joined(separator: ",\n    ")
 
         return """
@@ -124,9 +124,7 @@ public final class PrivilegedMTPSession: @unchecked Sendable {
         let pid = \(productID)
 
         struct FileEntry { let path: String; let name: String; let size: UInt64 }
-        let files: [FileEntry] = [
-            \(fileEntries)
-        ].map { FileEntry(path: $0.path, name: $0.name, size: $0.size) }
+        let files: [FileEntry] = [\(fileEntries.isEmpty ? "" : "\n    \(fileEntries)\n")]
 
         func findDevice() -> io_service_t? {
             guard let m = IOServiceMatching("IOUSBHostDevice") else { return nil }

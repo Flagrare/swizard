@@ -60,6 +60,30 @@ final class AppStateTests: XCTestCase {
         state.testMTPConnection()
         XCTAssertEqual(state.mtpTestResult, "Testing...")
     }
+    // MARK: - Copy logs
+
+    func testCopyLogsReturnsFormattedString() {
+        let store = InMemoryPreferencesStore()
+        let state = AppState(preferences: store)
+
+        state.coordinator.log("First message", level: .info)
+        state.coordinator.log("Second error", level: .error)
+
+        let copied = state.copyLogsToString()
+
+        XCTAssertTrue(copied.contains("First message"))
+        XCTAssertTrue(copied.contains("Second error"))
+        XCTAssertTrue(copied.contains("[INFO]"))
+        XCTAssertTrue(copied.contains("[ERROR]"))
+    }
+
+    func testCopyLogsIsEmptyWhenNoLogs() {
+        let store = InMemoryPreferencesStore()
+        let state = AppState(preferences: store)
+
+        let copied = state.copyLogsToString()
+        XCTAssertTrue(copied.isEmpty)
+    }
 }
 
 /// Mock USB adapter for tests — never prompts for password.
