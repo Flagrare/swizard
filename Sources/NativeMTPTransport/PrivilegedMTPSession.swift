@@ -252,79 +252,79 @@ public final class PrivilegedMTPSession: @unchecked Sendable {
             let _ = try readContainer() // Response phase
             print("LOG:Got storage IDs")
 
-            // Parse storage IDs from data container
-            var storageID: UInt32 = 0
+            // Parse ALL storage IDs from data container
+            var storageIDs: [UInt32] = []
             if storageData.count >= 16 {
-                let payload = storageData.dropFirst(12) // skip container header
-                if payload.count >= 8 {
-                    // First 4 bytes = array count, next 4 bytes = first storage ID
-                    var sid: UInt32 = 0
-                    _ = withUnsafeMutableBytes(of: &sid) { payload.dropFirst(4).copyBytes(to: $0) }
-                    storageID = UInt32(littleEndian: sid)
-                }
-            }
-            print("LOG:Using storage ID \\(storageID)")
-
-            // MTP GetObjectHandles for root
-            let handlesTx = nextTx()
-            try writeContainer(buildCmd(code: 0x1007, tx: handlesTx, params: [storageID, 0, 0xFFFFFFFF]))
-            let handlesData = try readContainer() // handles data
-            let _ = try readContainer() // response
-
-            // Parse object handles from data container
-            var objectHandles: [UInt32] = []
-            let handlesPayload = Data(handlesData.dropFirst(12))
-            if handlesPayload.count >= 4 {
-                var handleCount: UInt32 = 0
-                _ = withUnsafeMutableBytes(of: &handleCount) { handlesPayload.copyBytes(to: $0) }
-                handleCount = UInt32(littleEndian: handleCount)
-                for i in 0..<Int(handleCount) {
-                    let offset = 4 + i * 4
-                    if offset + 4 <= handlesPayload.count {
-                        var h: UInt32 = 0
-                        _ = withUnsafeMutableBytes(of: &h) { handlesPayload.dropFirst(offset).copyBytes(to: $0) }
-                        objectHandles.append(UInt32(littleEndian: h))
-                    }
-                }
-            }
-            print("LOG:Found \\(objectHandles.count) objects in storage")
-
-            // Find install folder by checking each object's name
-            var installFolderHandle: UInt32 = 0xFFFFFFFF
-            let installNames = ["sd install", "microsd install", "nand install", "install"]
-
-            for handle in objectHandles {
-                let infoTx2 = nextTx()
-                try writeContainer(buildCmd(code: 0x1008, tx: infoTx2, params: [handle]))
-                let objInfoData = try readContainer() // data
-                let _ = try readContainer() // response
-
-                // Parse filename from ObjectInfo — skip 12-byte container header + 52 bytes of fixed fields
-                let infoPayload = Data(objInfoData.dropFirst(12))
-                if infoPayload.count > 53 {
-                    let strLen = Int(infoPayload[52]) // MTP string length byte
-                    if strLen > 0 && infoPayload.count >= 53 + strLen * 2 {
-                        var nameChars: [UInt16] = []
-                        for j in 0..<(strLen - 1) { // -1 for null terminator
-                            let lo = UInt16(infoPayload[53 + j * 2])
-                            let hi = UInt16(infoPayload[53 + j * 2 + 1])
-                            nameChars.append(lo | (hi << 8))
-                        }
-                        let name = String(utf16CodeUnits: nameChars, count: nameChars.count)
-                        print("LOG:  Object \\(handle): \\(name)")
-
-                        if installNames.contains(name.lowercased()) {
-                            installFolderHandle = handle
-                            print("LOG:  → Using as install folder!")
+                let payload = Data(storageData.dropFirst(12))
+                if payload.count >= 4 {
+                    var count: UInt32 = 0
+                    _ = withUnsafeMutableBytes(of: &count) { payload.copyBytes(to: $0) }
+                    count = UInt32(littleEndian: count)
+                    for i in 0..<Int(count) {
+                        let offset = 4 + i * 4
+                        if offset + 4 <= payload.count {
+                            var sid: UInt32 = 0
+                            _ = withUnsafeMutableBytes(of: &sid) { payload.dropFirst(offset).copyBytes(to: $0) }
+                            storageIDs.append(UInt32(littleEndian: sid))
                         }
                     }
                 }
             }
+            print("LOG:Found \\(storageIDs.count) storage(s): \\(storageIDs)")
 
-            if installFolderHandle == 0xFFFFFFFF {
-                print("LOG:No install folder found — using root (files may not auto-install)")
+            // Find the install storage by name (not by scanning objects)
+            // DBI exposes storages like "5: SD Card install", "6: NAND install"
+            // The storage ITSELF is the install target — parentHandle = 0xFFFFFFFF (root)
+            var installStorageID: UInt32 = storageIDs.first ?? 0
+            var foundInstallStorage = false
+
+            func parseStorageName(storageInfoData: Data) -> String? {
+                let payload = Data(storageInfoData.dropFirst(12))
+                // MTP StorageInfo: StorageType(2) + FilesystemType(2) + AccessCapability(2) +
+                // MaxCapacity(8) + FreeSpace(8) + FreeObjects(4) + StorageDescription(MTPString)
+                // = offset 26 for description string
+                guard payload.count > 26 else { return nil }
+                let strLen = Int(payload[26])
+                guard strLen > 0 && payload.count >= 27 + strLen * 2 else { return nil }
+                var chars: [UInt16] = []
+                for j in 0..<(strLen - 1) {
+                    let lo = UInt16(payload[27 + j * 2])
+                    let hi = UInt16(payload[27 + j * 2 + 1])
+                    chars.append(lo | (hi << 8))
+                }
+                return String(utf16CodeUnits: chars, count: chars.count)
+            }
+
+            for sid in storageIDs {
+                // GetStorageInfo (0x1005) to get the storage name
+                let sinfoTx = nextTx()
+                try writeContainer(buildCmd(code: 0x1005, tx: sinfoTx, params: [sid]))
+                let sinfoData = try readContainer()
+                let _ = try readContainer()
+
+                if let name = parseStorageName(storageInfoData: sinfoData) {
+                    print("LOG:  Storage \\(sid): \\(name)")
+
+                    // Match by "install" in the name (case-insensitive, works across DBI versions/languages)
+                    if name.lowercased().contains("sd") && name.lowercased().contains("install") {
+                        installStorageID = sid
+                        foundInstallStorage = true
+                        print("LOG:  → Using as SD install storage!")
+                        break
+                    }
+                    // Fallback: any storage with "install" in name
+                    if !foundInstallStorage && name.lowercased().contains("install") {
+                        installStorageID = sid
+                        foundInstallStorage = true
+                        print("LOG:  → Using as install storage!")
+                    }
+                }
+            }
+
+            if !foundInstallStorage {
+                print("LOG:WARNING — No install storage found. Files will go to first storage.")
             } else {
-                print("LOG:Install folder handle: \\(installFolderHandle)")
+                print("LOG:Target install storage: \\(installStorageID)")
             }
 
             // For each file: SendObjectInfo + SendObject
@@ -333,7 +333,7 @@ public final class PrivilegedMTPSession: @unchecked Sendable {
 
                 // SendObjectInfo — target the install folder
                 let infoTx = nextTx()
-                try writeContainer(buildCmd(code: 0x100C, tx: infoTx, params: [storageID, installFolderHandle]))
+                try writeContainer(buildCmd(code: 0x100C, tx: infoTx, params: [installStorageID, installFolderHandle]))
 
                 // Build ObjectInfo dataset
                 var objInfo = Data()

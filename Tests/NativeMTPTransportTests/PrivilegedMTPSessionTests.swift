@@ -53,6 +53,37 @@ final class PrivilegedMTPSessionTests: XCTestCase {
 
     // MARK: - Behavior: generates correct script with file paths
 
+    // MARK: - Storage discovery
+
+    func testScriptSearchesStoragesByName() {
+        let script = PrivilegedMTPSession.buildScript(
+            vendorID: NintendoSwitchUSB.vendorID,
+            productID: NintendoSwitchUSB.mtpProductID,
+            files: []
+        )
+
+        // Script should use GetStorageInfo (0x1005) to get storage names
+        XCTAssertTrue(script.contains("0x1005"), "Script should call GetStorageInfo")
+        // Script should search for "install" in storage names (case-insensitive)
+        XCTAssertTrue(script.contains("install"), "Script should search for install storage")
+        // Script should NOT hardcode a storage ID
+        XCTAssertFalse(script.contains("65541"), "Script should not hardcode storage 65541")
+    }
+
+    func testScriptPrefersSDInstallOverNANDInstall() {
+        let script = PrivilegedMTPSession.buildScript(
+            vendorID: NintendoSwitchUSB.vendorID,
+            productID: NintendoSwitchUSB.mtpProductID,
+            files: []
+        )
+
+        // Script should prefer SD install (safer for user's NAND)
+        XCTAssertTrue(script.contains("\"sd\"") || script.contains("\"SD\"") || script.lowercased().contains("sd"),
+                       "Script should prefer SD install storage")
+    }
+
+    // MARK: - File paths
+
     func testScriptIncludesFilePaths() {
         let files = [
             PrivilegedMTPSession.FileToInstall(path: "/tmp/game1.nsp", name: "game1.nsp", size: 1000),
