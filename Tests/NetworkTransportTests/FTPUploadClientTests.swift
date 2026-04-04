@@ -38,6 +38,29 @@ final class FTPUploadClientTests: XCTestCase {
         XCTAssertTrue(args.contains("--disable-epsv"))
     }
 
+    func testCurlArgumentsUseEncodedURL() {
+        let client = FTPUploadClient()
+        let connection = FTPConnectionInfo(host: "192.168.0.96", port: 5000)
+        let file = URL(fileURLWithPath: "/tmp/Jump Rope [v0] (0.07 GB).nsz")
+
+        let args = client.buildCurlArguments(file: file, connection: connection)
+
+        // The FTP URL in args should be percent-encoded
+        let urlArg = args.first(where: { $0.starts(with: "ftp://") })!
+        XCTAssertFalse(urlArg.contains(" "), "URL must not contain raw spaces")
+        XCTAssertFalse(urlArg.contains("["), "URL must not contain raw brackets")
+        XCTAssertTrue(urlArg.contains("%20"), "Spaces should be percent-encoded")
+    }
+
+    func testUploadLogsURLBeforeTransfer() async throws {
+        let mock = MockFTPUploadClient()
+        let connection = FTPConnectionInfo(host: "192.168.0.96", port: 5000)
+        let file = URL(fileURLWithPath: "/tmp/game.nsz")
+
+        try await mock.upload(file: file, to: connection, onProgress: { _ in }, onLog: { _ in })
+        XCTAssertEqual(mock.uploadedFiles.count, 1)
+    }
+
     func testMockClientRecordsUpload() async throws {
         let mock = MockFTPUploadClient()
         let connection = FTPConnectionInfo(host: "192.168.0.96", port: 5000)

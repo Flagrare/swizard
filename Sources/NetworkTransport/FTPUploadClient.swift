@@ -28,7 +28,9 @@ public final class FTPUploadClient: FTPUploadClientProtocol, @unchecked Sendable
         onLog: @escaping @Sendable (String) -> Void
     ) async throws {
         let args = buildCurlArguments(file: file, connection: connection)
+        let ftpURL = connection.uploadURL(for: file.lastPathComponent)
         onLog("Uploading \(file.lastPathComponent) to \(connection.displayString)...")
+        onLog("curl URL: \(ftpURL)")
 
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/usr/bin/curl")
@@ -40,8 +42,9 @@ public final class FTPUploadClient: FTPUploadClientProtocol, @unchecked Sendable
 
         try process.run()
 
-        // Read stderr for progress updates
+        // Read stderr for progress + error messages
         let handle = stderrPipe.fileHandleForReading
+        var allStderr = ""
 
         while process.isRunning {
             let data = handle.availableData
@@ -51,18 +54,24 @@ public final class FTPUploadClient: FTPUploadClientProtocol, @unchecked Sendable
             }
 
             let text = String(data: data, encoding: .utf8) ?? ""
+            allStderr += text
             for line in text.components(separatedBy: "\r") {
-                if let progress = CurlProgressParser.parse(line) {
+                let trimmed = line.trimmingCharacters(in: .whitespacesAndNewlines)
+                if let progress = CurlProgressParser.parse(trimmed) {
                     onProgress(progress.percentage)
+                } else if !trimmed.isEmpty && trimmed.contains("curl:") {
+                    onLog("curl: \(trimmed)")
                 }
             }
         }
 
-        // Read any remaining data
+        // Read remaining
         let remaining = handle.readDataToEndOfFile()
         if let text = String(data: remaining, encoding: .utf8) {
+            allStderr += text
             for line in text.components(separatedBy: "\r") {
-                if let progress = CurlProgressParser.parse(line) {
+                let trimmed = line.trimmingCharacters(in: .whitespacesAndNewlines)
+                if let progress = CurlProgressParser.parse(trimmed) {
                     onProgress(progress.percentage)
                 }
             }
@@ -71,6 +80,11 @@ public final class FTPUploadClient: FTPUploadClientProtocol, @unchecked Sendable
         process.waitUntilExit()
 
         guard process.terminationStatus == 0 else {
+            // Log the full stderr for debugging
+            let stderrSummary = allStderr.trimmingCharacters(in: .whitespacesAndNewlines)
+            if !stderrSummary.isEmpty {
+                onLog("curl stderr: \(stderrSummary.prefix(500))")
+            }
             throw FTPUploadError.transferFailed("curl exited with code \(process.terminationStatus)")
         }
 
