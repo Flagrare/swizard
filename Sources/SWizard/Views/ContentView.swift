@@ -178,6 +178,7 @@ struct ContentView: View {
                 Text(appState.installHelpText)
                     .font(.caption)
                     .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
 
             Spacer(minLength: 8)
