@@ -82,6 +82,22 @@ final class PrivilegedMTPSessionTests: XCTestCase {
                        "Script should prefer SD install storage")
     }
 
+    func testScriptUsesHasSuffixNotContainsForInstallMatch() {
+        let script = PrivilegedMTPSession.buildScript(
+            vendorID: NintendoSwitchUSB.vendorID,
+            productID: NintendoSwitchUSB.mtpProductID,
+            files: []
+        )
+
+        // Must use hasSuffix("install") not contains("install")
+        // "Installed games" contains "install" but does NOT end with "install"
+        XCTAssertTrue(script.contains("hasSuffix"), "Script must use hasSuffix to avoid matching 'Installed games'")
+        XCTAssertFalse(
+            script.contains("contains(\"install\")"),
+            "Script must NOT use contains(install) — matches 'Installed games' falsely"
+        )
+    }
+
     func testScriptHasNoStaleVariableNames() {
         let script = PrivilegedMTPSession.buildScript(
             vendorID: NintendoSwitchUSB.vendorID,

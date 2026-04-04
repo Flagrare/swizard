@@ -313,18 +313,18 @@ public final class PrivilegedMTPSession: @unchecked Sendable {
                 if let name = parseStorageName(storageInfoData: sinfoData) {
                     print("LOG:  Storage \\(sid): \\(name)")
 
-                    // Match by "install" in the name (case-insensitive, works across DBI versions/languages)
-                    if name.lowercased().contains("sd") && name.lowercased().contains("install") {
+                    // Match storage whose name ENDS with "install" (not "Installed games")
+                    let lower = name.lowercased()
+                    if lower.hasSuffix("install") {
                         installStorageID = sid
                         foundInstallStorage = true
-                        print("LOG:  → Using as SD install storage!")
-                        break
-                    }
-                    // Fallback: any storage with "install" in name
-                    if !foundInstallStorage && name.lowercased().contains("install") {
-                        installStorageID = sid
-                        foundInstallStorage = true
-                        print("LOG:  → Using as install storage!")
+                        if lower.contains("sd") {
+                            print("LOG:  → SD Card install storage!")
+                        } else {
+                            print("LOG:  → Install storage!")
+                        }
+                        // Prefer SD over NAND — keep looking if this isn't SD
+                        if lower.contains("sd") { break }
                     }
                 }
             }
