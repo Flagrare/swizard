@@ -27,6 +27,15 @@ final class DropFileFilterTests: XCTestCase {
         XCTAssertNil(resolved)
     }
 
+    func testSupportedExtensionsMatchGameFormats() {
+        // File picker should filter to exactly these extensions
+        XCTAssertTrue(DropFileFilter.supportedExtensions.contains("nsp"))
+        XCTAssertTrue(DropFileFilter.supportedExtensions.contains("nsz"))
+        XCTAssertTrue(DropFileFilter.supportedExtensions.contains("xci"))
+        XCTAssertTrue(DropFileFilter.supportedExtensions.contains("xcz"))
+        XCTAssertEqual(DropFileFilter.supportedExtensions.count, 4)
+    }
+
     func testResolveSupportedURLRejectsInvalidData() {
         let resolved = DropFileFilter.resolveSupportedURL(fromFileURLData: Data([0x01, 0x02, 0x03]))
 
