@@ -47,13 +47,13 @@ public final class PrivilegedMTPSession: @unchecked Sendable {
 
         onLog("Requesting admin privileges...")
 
-        let escapedScript = script
-            .replacingOccurrences(of: "\\", with: "\\\\")
-            .replacingOccurrences(of: "'", with: "'\\''")
+        // Write script to temp file to avoid shell escaping issues
+        let tempFile = FileManager.default.temporaryDirectory.appendingPathComponent("swizard_mtp_\(UUID().uuidString).swift")
+        try script.write(to: tempFile, atomically: true, encoding: .utf8)
+        defer { try? FileManager.default.removeItem(at: tempFile) }
 
-        let osascript = """
-        do shell script "DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift -e '\(escapedScript)' 2>&1" with administrator privileges
-        """
+        let shellCmd = "DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift \\\"" + tempFile.path + "\\\" 2>&1"
+        let osascript = "do shell script \"\(shellCmd)\" with administrator privileges"
 
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/usr/bin/osascript")
