@@ -60,6 +60,28 @@ final class AppStateTests: XCTestCase {
         state.testMTPConnection()
         XCTAssertEqual(state.mtpTestResult, "Testing...")
     }
+    // MARK: - Device monitoring adapts to transport mode
+
+    func testNetworkModeDoesNotRequireDeviceConnection() {
+        let store = InMemoryPreferencesStore()
+        let state = AppState(preferences: store)
+        state.coordinator.transportMode = .network
+
+        // Network mode should not show "Waiting for Switch"
+        // isDeviceConnected is irrelevant for network mode
+        // (Install button should work without device in network mode)
+        XCTAssertFalse(state.isDeviceConnected)
+    }
+
+    func testDefaultMTPModeStartsDisconnected() {
+        let store = InMemoryPreferencesStore()
+        let state = AppState(preferences: store)
+
+        // MTP is default mode — starts disconnected until monitoring detects device
+        XCTAssertEqual(state.coordinator.transportMode, .mtp)
+        XCTAssertFalse(state.isDeviceConnected)
+    }
+
     // MARK: - Copy logs
 
     func testCopyLogsReturnsFormattedString() {

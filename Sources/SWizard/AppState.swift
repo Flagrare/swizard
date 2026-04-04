@@ -58,13 +58,34 @@ final class AppState {
     func startMonitoring() {
         monitorTask?.cancel()
         monitorTask = Task {
-            for await event in deviceMonitor.events() {
-                switch event {
-                case .connected:
-                    isDeviceConnected = true
-                case .disconnected:
-                    isDeviceConnected = false
+            // Poll for device based on current transport mode
+            var wasConnected = false
+            while !Task.isCancelled {
+                let found: Bool
+                switch coordinator.transportMode {
+                case .dbiBackend:
+                    // Use USBDeviceMonitor's underlying check (libusb, PID 0x3000)
+                    found = USBDeviceScanner.findDevice(
+                        vendorID: NintendoSwitchUSB.vendorID,
+                        productID: NintendoSwitchUSB.backendProductID
+                    ) != nil
+                case .mtp:
+                    // Scan for MTP PID (0x201D)
+                    found = USBDeviceScanner.findDevice(
+                        vendorID: NintendoSwitchUSB.vendorID,
+                        productID: NintendoSwitchUSB.mtpProductID
+                    ) != nil
+                case .network:
+                    // Network mode doesn't need USB detection
+                    found = false
                 }
+
+                if found != wasConnected {
+                    isDeviceConnected = found
+                    wasConnected = found
+                }
+
+                try? await Task.sleep(for: .seconds(1))
             }
         }
     }
