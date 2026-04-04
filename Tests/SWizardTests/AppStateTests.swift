@@ -1,6 +1,7 @@
 import XCTest
 @testable import SWizard
 @testable import NativeMTPTransport
+import Installer
 
 @MainActor
 final class AppStateTests: XCTestCase {
@@ -106,6 +107,56 @@ final class AppStateTests: XCTestCase {
         let copied = state.copyLogsToString()
         XCTAssertTrue(copied.isEmpty)
     }
+
+    func testAppVersionDisplayIncludesVPrefixForReleaseVersion() {
+        let store = InMemoryPreferencesStore()
+        let state = AppState(
+            preferences: store,
+            appVersionProvider: StubVersionProvider(displayVersion: "1.2.3 (45)"),
+            diagnosticsExportRunner: SpyDiagnosticsExportRunner()
+        )
+
+        XCTAssertEqual(state.appVersionDisplay, "v1.2.3 (45)")
+    }
+
+    func testAppVersionDisplayUsesDevWithoutPrefix() {
+        let store = InMemoryPreferencesStore()
+        let state = AppState(
+            preferences: store,
+            appVersionProvider: StubVersionProvider(displayVersion: "dev"),
+            diagnosticsExportRunner: SpyDiagnosticsExportRunner()
+        )
+
+        XCTAssertEqual(state.appVersionDisplay, "dev")
+    }
+
+    func testAppVersionDisplayDoesNotPrefixNonNumericLabels() {
+        let store = InMemoryPreferencesStore()
+        let state = AppState(
+            preferences: store,
+            appVersionProvider: StubVersionProvider(displayVersion: "main-snapshot"),
+            diagnosticsExportRunner: SpyDiagnosticsExportRunner()
+        )
+
+        XCTAssertEqual(state.appVersionDisplay, "main-snapshot")
+    }
+
+    func testExportDiagnosticsPassesContextToRunner() {
+        let store = InMemoryPreferencesStore()
+        let runner = SpyDiagnosticsExportRunner()
+        let state = AppState(
+            preferences: store,
+            appVersionProvider: StubVersionProvider(displayVersion: "2.0.0"),
+            diagnosticsExportRunner: runner
+        )
+        state.coordinator.transportMode = .network
+
+        state.exportDiagnosticsLogs()
+
+        XCTAssertEqual(runner.receivedRequest?.appVersion, "2.0.0")
+        XCTAssertEqual(runner.receivedRequest?.transportMode, "Network")
+        XCTAssertEqual(runner.receivedRequest?.installationState, "idle")
+    }
 }
 
 /// Mock MTP session for tests — never prompts for password, fails immediately.
@@ -130,5 +181,19 @@ private final class InMemoryPreferencesStore: PreferencesStore {
 
     func set(_ value: Bool, forKey defaultName: String) {
         values[defaultName] = value
+    }
+}
+
+private struct StubVersionProvider: AppVersionProviding {
+    let displayVersion: String
+}
+
+private final class SpyDiagnosticsExportRunner: DiagnosticsExportRunning {
+    private(set) var receivedRequest: DiagnosticsExportRequest?
+
+    @MainActor
+    func export(request: DiagnosticsExportRequest, entries: [Installer.LogEntry]) throws -> URL? {
+        receivedRequest = request
+        return nil
     }
 }

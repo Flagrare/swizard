@@ -23,15 +23,31 @@ final class AppState {
     let deviceMonitor: USBDeviceMonitor
     var isDeviceConnected = false
     var showInstallHelp: Bool
+    var diagnosticsExportStatusMessage: String?
     private var monitorTask: Task<Void, Never>?
     private let preferences: PreferencesStore
+    private let appVersionProvider: any AppVersionProviding
+    private let diagnosticsExportRunner: any DiagnosticsExportRunning
 
     /// Shared flag for device mutex — set by coordinator state changes.
     private let _isTransferActive = TransferActiveFlag()
 
-    init(preferences: PreferencesStore = UserDefaults.standard) {
+    init(
+        preferences: PreferencesStore = UserDefaults.standard,
+        appVersionProvider: any AppVersionProviding = DefaultAppVersionProvider(),
+        diagnosticsExportRunner: (any DiagnosticsExportRunning)? = nil
+    ) {
         let flag = _isTransferActive
         self.preferences = preferences
+        self.appVersionProvider = appVersionProvider
+        if let diagnosticsExportRunner {
+            self.diagnosticsExportRunner = diagnosticsExportRunner
+        } else {
+            self.diagnosticsExportRunner = DiagnosticsExportUseCase(
+                formatter: PlainTextDiagnosticsFormatter(),
+                exporter: SavePanelDiagnosticsExporter()
+            )
+        }
         self.deviceMonitor = USBDeviceMonitor { flag.value }
         self.showInstallHelp = !preferences.bool(forKey: Self.installHelpDismissedKey)
     }
@@ -41,6 +57,17 @@ final class AppState {
         case .transferring, .reconnecting: return true
         default: return false
         }
+    }
+
+    var appVersionDisplay: String {
+        let version = appVersionProvider.displayVersion
+        guard shouldPrefixVersion(version) else { return version }
+        return "v\(version)"
+    }
+
+    private func shouldPrefixVersion(_ version: String) -> Bool {
+        guard let first = version.first else { return false }
+        return first.isNumber
     }
 
     /// Help text depends on the selected mode.
@@ -169,6 +196,25 @@ final class AppState {
         NSPasteboard.general.setString(text, forType: .string)
     }
 
+    func exportDiagnosticsLogs() {
+        let request = DiagnosticsExportRequest(
+            appVersion: appVersionProvider.displayVersion,
+            transportMode: coordinator.transportMode.rawValue,
+            installationState: coordinator.state.diagnosticsLabel
+        )
+
+        do {
+            let exportedURL = try diagnosticsExportRunner.export(request: request, entries: coordinator.logs)
+            if let exportedURL {
+                diagnosticsExportStatusMessage = "Diagnostics exported to \(exportedURL.lastPathComponent)."
+            } else {
+                diagnosticsExportStatusMessage = "Diagnostics export cancelled."
+            }
+        } catch {
+            diagnosticsExportStatusMessage = "Failed to export diagnostics: \(error.localizedDescription)"
+        }
+    }
+
     // MARK: - MTP Connection Test
 
     var mtpTestResult: String?
@@ -180,6 +226,20 @@ final class AppState {
         mtpTestResult = "Testing..."
         Task {
             await runMTPDiagnostic()
+        }
+    }
+}
+
+private extension InstallationCoordinator.State {
+    var diagnosticsLabel: String {
+        switch self {
+        case .idle: "idle"
+        case .connecting: "connecting"
+        case .connected: "connected"
+        case .transferring: "transferring"
+        case .reconnecting(let attempt): "reconnecting(\(attempt))"
+        case .complete: "complete"
+        case .error(let message): "error(\(message))"
         }
     }
 }

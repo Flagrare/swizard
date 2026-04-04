@@ -220,6 +220,15 @@ struct ContentView: View {
                 Spacer()
 
                 Button {
+                    appState.exportDiagnosticsLogs()
+                } label: {
+                    Image(systemName: "square.and.arrow.down")
+                        .font(.caption)
+                }
+                .buttonStyle(.borderless)
+                .help("Export diagnostics log file")
+
+                Button {
                     appState.copyLogsToClipboard()
                 } label: {
                     Image(systemName: "doc.on.doc")
@@ -231,6 +240,14 @@ struct ContentView: View {
             }
             .padding(.horizontal)
             .padding(.vertical, 8)
+
+            if let exportStatus = appState.diagnosticsExportStatusMessage {
+                Text(exportStatus)
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal)
+                    .padding(.bottom, 6)
+            }
 
             Divider()
 
@@ -245,6 +262,10 @@ struct ContentView: View {
             installButton
 
             Spacer()
+
+            Text(appState.appVersionDisplay)
+                .font(.caption2)
+                .foregroundStyle(.secondary)
 
             if !appState.coordinator.progress.files.isEmpty {
                 Button("Clear Queue") {

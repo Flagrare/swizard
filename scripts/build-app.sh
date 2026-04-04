@@ -13,15 +13,19 @@ MACOS_DIR="${CONTENTS_DIR}/MacOS"
 RESOURCES_DIR="${CONTENTS_DIR}/Resources"
 ICON_SOURCE="$ROOT_DIR/Assets/${APP_NAME}.icns"
 INSTALL_TO_APPLICATIONS=false
+APP_VERSION="$(git -C "$ROOT_DIR" describe --tags --abbrev=0 2>/dev/null || printf "dev")"
 
 for arg in "$@"; do
     case "$arg" in
         --install)
             INSTALL_TO_APPLICATIONS=true
             ;;
+        --version=*)
+            APP_VERSION="${arg#*=}"
+            ;;
         *)
             echo "Unknown argument: $arg"
-            echo "Usage: scripts/build-app.sh [--install]"
+            echo "Usage: scripts/build-app.sh [--install] [--version=x.y.z]"
             exit 1
             ;;
     esac
@@ -43,7 +47,7 @@ if [[ -f "${ICON_SOURCE}" ]]; then
 fi
 
 # Create Info.plist
-cat > "${CONTENTS_DIR}/Info.plist" << 'PLIST'
+cat > "${CONTENTS_DIR}/Info.plist" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -59,9 +63,9 @@ cat > "${CONTENTS_DIR}/Info.plist" << 'PLIST'
     <key>CFBundleIconFile</key>
     <string>SWizard.icns</string>
     <key>CFBundleVersion</key>
-    <string>1.0.0</string>
+    <string>${APP_VERSION}</string>
     <key>CFBundleShortVersionString</key>
-    <string>1.0.0</string>
+    <string>${APP_VERSION}</string>
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>LSMinimumSystemVersion</key>
