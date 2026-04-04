@@ -100,7 +100,7 @@ final class AppState {
         // This prompts for admin password, then does DeviceCapture → OpenSession → CloseSession
         logMTP("Testing MTP handshake (will ask for admin password)...", level: .warning)
 
-        let session = PrivilegedMTPSession()
+        let session = mtpSessionFactory()
         do {
             // Install with empty file list — just tests the handshake
             try await session.install(
@@ -151,8 +151,8 @@ final class AppState {
 
     var mtpTestResult: String?
 
-    /// Injectable for testing — defaults to real IOUSBHostAdapter.
-    var mtpAdapterFactory: () -> any USBBulkTransferProtocol = { IOUSBHostAdapter() }
+    /// Injectable for testing — defaults to real PrivilegedMTPSession.
+    var mtpSessionFactory: () -> any MTPSessionProtocol = { PrivilegedMTPSession() }
 
     func testMTPConnection() {
         mtpTestResult = "Testing..."

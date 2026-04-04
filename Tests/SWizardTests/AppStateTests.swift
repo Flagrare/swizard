@@ -38,7 +38,7 @@ final class AppStateTests: XCTestCase {
         let store = InMemoryPreferencesStore()
         let state = AppState(preferences: store)
         // Inject mock adapter so test never prompts for password
-        state.mtpAdapterFactory = { MockBulkTransfer() }
+        state.mtpSessionFactory = { MockMTPSessionForAppState() }
 
         let logCountBefore = state.coordinator.logs.count
 
@@ -54,7 +54,7 @@ final class AppStateTests: XCTestCase {
     func testMTPTestResultStartsAsTesting() async {
         let store = InMemoryPreferencesStore()
         let state = AppState(preferences: store)
-        state.mtpAdapterFactory = { MockBulkTransfer() }
+        state.mtpSessionFactory = { MockMTPSessionForAppState() }
 
         XCTAssertNil(state.mtpTestResult)
         state.testMTPConnection()
@@ -86,14 +86,16 @@ final class AppStateTests: XCTestCase {
     }
 }
 
-/// Mock USB adapter for tests — never prompts for password.
-private final class MockBulkTransfer: USBBulkTransferProtocol, @unchecked Sendable {
-    func open(vendorID: UInt16, productID: UInt16) async throws {
+/// Mock MTP session for tests — never prompts for password, fails immediately.
+private final class MockMTPSessionForAppState: MTPSessionProtocol, @unchecked Sendable {
+    func install(
+        files: [PrivilegedMTPSession.FileToInstall],
+        onProgress: @escaping @Sendable (String, UInt64, UInt64) -> Void,
+        onLog: @escaping @Sendable (String) -> Void
+    ) async throws {
+        onLog("Mock session — no real USB")
         throw IOUSBHostError.deviceNotFound
     }
-    func close() async {}
-    func readBulk(maxLength: Int) async throws -> Data { Data() }
-    func writeBulk(_ data: Data) async throws {}
 }
 
 private final class InMemoryPreferencesStore: PreferencesStore {
