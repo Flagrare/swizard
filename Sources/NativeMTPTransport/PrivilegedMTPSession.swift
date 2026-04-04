@@ -405,44 +405,45 @@ public final class PrivilegedMTPSession: @unchecked Sendable {
                 }
                 print("LOG:ObjectInfo sent for \\(file.name)")
 
-                // SendObject — libmtp sends command first, then data container
+                // SendObject — command then data (header + file content in same transfer)
                 let objTx = nextTx()
 
-                // Open file
+                // 1. Send SendObject command
+                try writeContainer(buildCmd(code: 0x100D, tx: objTx))
+                print("LOG:SendObject command sent")
+
+                // 2. Open file
                 let handle = try FileHandle(forReadingFrom: URL(fileURLWithPath: file.path))
                 defer { handle.closeFile() }
 
-                // 1. Send SendObject COMMAND container (12 bytes, no params)
-                let objCmd = buildCmd(code: 0x100D, tx: objTx)
-                print("LOG:Sending SendObject command (\\(objCmd.count) bytes, tx=\\(objTx))...")
-                let cmdMD = NSMutableData(data: objCmd)
-                var cmdBW: Int = 0
-                try outP.__sendIORequest(with: cmdMD, bytesTransferred: &cmdBW, completionTimeout: 10.0)
-                print("LOG:SendObject command sent (\\(cmdBW) bytes)")
+                // 3. Build data container: header (12 bytes) + first chunk together
+                let chunkSize = 1024 * 1024 // 1MB — same as DBI backend
+                let firstChunk = handle.readData(ofLength: chunkSize)
 
-                // 2. Build DATA container header
-                var dataHeader = Data()
+                var dataPacket = Data()
                 let containerLen = UInt32(min(UInt64(12) + file.size, UInt64(UInt32.max)))
-                withUnsafeBytes(of: containerLen.littleEndian) { dataHeader.append(contentsOf: $0) }
-                withUnsafeBytes(of: UInt16(2).littleEndian) { dataHeader.append(contentsOf: $0) }
-                withUnsafeBytes(of: UInt16(0x100D).littleEndian) { dataHeader.append(contentsOf: $0) }
-                withUnsafeBytes(of: objTx.littleEndian) { dataHeader.append(contentsOf: $0) }
+                withUnsafeBytes(of: containerLen.littleEndian) { dataPacket.append(contentsOf: $0) }
+                withUnsafeBytes(of: UInt16(2).littleEndian) { dataPacket.append(contentsOf: $0) }
+                withUnsafeBytes(of: UInt16(0x100D).littleEndian) { dataPacket.append(contentsOf: $0) }
+                withUnsafeBytes(of: objTx.littleEndian) { dataPacket.append(contentsOf: $0) }
+                dataPacket.append(firstChunk)
 
-                // Send data container header + ALL file data as one logical transfer
-                // Use writeContainer for the header, then writeContainer for each chunk
-                print("LOG:Sending data container header (\\(dataHeader.count) bytes)...")
-                try writeContainer(dataHeader)
-                print("LOG:Data header sent")
+                // Send as one USB transfer
+                print("LOG:Sending data packet (\\(dataPacket.count) bytes)...")
+                let packetMD = NSMutableData(data: dataPacket)
+                var packetBW: Int = 0
+                try outP.__sendIORequest(with: packetMD, bytesTransferred: &packetBW, completionTimeout: 30.0)
+                var totalSent: UInt64 = UInt64(firstChunk.count)
+                print("PROGRESS:\\(file.name):\\(totalSent):\\(file.size)")
 
-                // Stream file data in 256KB chunks
-                let readChunkSize = 262144
-                var totalSent: UInt64 = 0
-
+                // 4. Stream remaining chunks (raw data, no container header)
                 while totalSent < file.size {
-                    let chunk = handle.readData(ofLength: readChunkSize)
+                    let chunk = handle.readData(ofLength: chunkSize)
                     if chunk.isEmpty { break }
-                    try writeContainer(chunk)
-                    totalSent += UInt64(chunk.count)
+                    let md = NSMutableData(data: chunk)
+                    var bw: Int = 0
+                    try outP.__sendIORequest(with: md, bytesTransferred: &bw, completionTimeout: 30.0)
+                    totalSent += UInt64(bw)
                     print("PROGRESS:\\(file.name):\\(totalSent):\\(file.size)")
                 }
 
