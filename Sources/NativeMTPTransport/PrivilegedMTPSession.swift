@@ -132,19 +132,6 @@ public final class PrivilegedMTPSession: @unchecked Sendable {
         files: [FileToInstall],
         targetStorageID: UInt32? = nil
     ) -> String {
-        // Build a shell script that uses mtp-sendfile or a Python/Swift helper with libmtp
-        // Since libmtp is a C library, we use a small C program compiled and run inline
-        let fileArgs = files.map { file in
-            "\(file.path)\t\(file.name)\t\(file.size)"
-        }.joined(separator: "\n")
-
-        let storageArg = targetStorageID.map { String($0) } ?? ""
-
-        // Use a Python script with pymtp/libmtp or compile a small C program
-        // Simplest approach: use mtp-tools command-line utilities
-        // But libmtp doesn't ship CLI tools via brew. Let's use a C program.
-
-        // Actually, the simplest proven approach: compile a small C file that uses libmtp API
         return buildLibmtpCScript(files: files, targetStorageID: targetStorageID)
     }
 
@@ -262,7 +249,7 @@ public final class PrivilegedMTPSession: @unchecked Sendable {
                 fileMeta->filename = strdup(files[i].name);
                 fileMeta->filesize = files[i].size;
                 fileMeta->filetype = LIBMTP_FILETYPE_UNKNOWN;
-                fileMeta->parent_id = 0;
+                fileMeta->parent_id = 0xFFFFFFFF; // root of install storage
                 fileMeta->storage_id = install_storage->id;
 
                 int ret = LIBMTP_Send_File_From_File(

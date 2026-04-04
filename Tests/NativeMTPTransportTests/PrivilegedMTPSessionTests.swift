@@ -128,6 +128,35 @@ final class PrivilegedMTPSessionTests: XCTestCase {
         XCTAssertTrue(script.contains("has_override = 0"))
     }
 
+    func testScriptSetsParentIDToRoot() {
+        let script = PrivilegedMTPSession.buildScript(
+            vendorID: NintendoSwitchUSB.vendorID,
+            productID: NintendoSwitchUSB.mtpProductID,
+            files: [PrivilegedMTPSession.FileToInstall(path: "/tmp/t.nsp", name: "t.nsp", size: 100)]
+        )
+
+        // parent_id must be 0xFFFFFFFF (root of install storage), not 0
+        XCTAssertTrue(script.contains("0xFFFFFFFF"), "parent_id must be root (0xFFFFFFFF)")
+        XCTAssertFalse(script.contains("parent_id = 0;"), "parent_id must NOT be 0")
+    }
+
+    func testScriptDetachesKernelDriverBeforeLibmtp() {
+        let script = PrivilegedMTPSession.buildScript(
+            vendorID: NintendoSwitchUSB.vendorID,
+            productID: NintendoSwitchUSB.mtpProductID,
+            files: []
+        )
+
+        // Must detach kernel driver with libusb before libmtp opens
+        XCTAssertTrue(script.contains("libusb_set_auto_detach_kernel_driver"))
+        XCTAssertTrue(script.contains("libusb_detach_kernel_driver"))
+
+        // libusb detach must come BEFORE LIBMTP_Init
+        let detachPos = script.range(of: "libusb_detach_kernel_driver")!.lowerBound
+        let initPos = script.range(of: "LIBMTP_Init")!.lowerBound
+        XCTAssertTrue(detachPos < initPos, "Kernel driver detach must happen before libmtp init")
+    }
+
     func testScriptUsesLibmtpNotIOUSBHost() {
         let script = PrivilegedMTPSession.buildScript(
             vendorID: NintendoSwitchUSB.vendorID,
