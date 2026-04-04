@@ -193,24 +193,46 @@ struct ContentView: View {
     }
 
     private var ftpAddressField: some View {
-        HStack(spacing: 8) {
-            Image(systemName: "wifi")
-                .foregroundStyle(.blue)
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 8) {
+                Image(systemName: "network")
+                    .foregroundStyle(.blue)
+                    .font(.title3)
 
-            Text("Switch FTP:")
-                .font(.caption)
-                .foregroundStyle(.secondary)
+                Text("Switch FTP Address")
+                    .font(.subheadline.weight(.semibold))
+            }
 
-            TextField("192.168.0.96:5000", text: Binding(
-                get: { appState.coordinator.ftpAddress },
-                set: { appState.coordinator.ftpAddress = $0 }
-            ))
-            .font(.system(.caption, design: .monospaced))
-            .textFieldStyle(.roundedBorder)
-            .frame(maxWidth: 180)
+            HStack(spacing: 8) {
+                TextField("Enter Switch IP (e.g., 192.168.0.96:5000)", text: Binding(
+                    get: { appState.coordinator.ftpAddress },
+                    set: { appState.coordinator.ftpAddress = $0 }
+                ))
+                .font(.system(.body, design: .monospaced))
+                .textFieldStyle(.roundedBorder)
+                .onSubmit {
+                    appState.validateFTPAddress()
+                }
+
+                Button("Connect") {
+                    appState.validateFTPAddress()
+                }
+                .buttonStyle(.bordered)
+                .disabled(appState.coordinator.ftpAddress.trimmingCharacters(in: .whitespaces).isEmpty)
+            }
+
+            if let error = appState.ftpValidationError {
+                Text(error)
+                    .font(.caption)
+                    .foregroundStyle(.red)
+            } else if appState.isDeviceConnected && appState.coordinator.transportMode == .network {
+                Label("Ready to install via FTP", systemImage: "checkmark.circle.fill")
+                    .font(.caption)
+                    .foregroundStyle(.green)
+            }
         }
         .padding(.horizontal)
-        .padding(.vertical, 4)
+        .padding(.vertical, 8)
     }
 
     // MARK: - Right Panel

@@ -79,12 +79,13 @@ final class AppStateTests: XCTestCase {
         let state = AppState(preferences: store)
         state.coordinator.transportMode = .network
         state.coordinator.ftpAddress = "192.168.0.96:5000"
+        state.validateFTPAddress() // User must click Connect
 
         state.startMonitoring()
         try? await Task.sleep(for: .seconds(1.5))
 
         XCTAssertTrue(state.isDeviceConnected,
-                       "Network mode should show connected when valid FTP address is entered")
+                       "Network mode should show connected after validating FTP address")
         state.stopMonitoring()
     }
 
@@ -100,6 +101,57 @@ final class AppStateTests: XCTestCase {
         XCTAssertFalse(state.isDeviceConnected,
                         "Network mode should show disconnected when FTP address is empty")
         state.stopMonitoring()
+    }
+
+    // MARK: - FTP address validation
+
+    func testValidateFTPAddressWithValidInput() {
+        let store = InMemoryPreferencesStore()
+        let state = AppState(preferences: store)
+        state.coordinator.transportMode = .network
+        state.coordinator.ftpAddress = "192.168.0.96:5000"
+
+        state.validateFTPAddress()
+
+        XCTAssertNil(state.ftpValidationError)
+        XCTAssertTrue(state.ftpAddressValidated)
+    }
+
+    func testValidateFTPAddressWithEmptyInput() {
+        let store = InMemoryPreferencesStore()
+        let state = AppState(preferences: store)
+        state.coordinator.transportMode = .network
+        state.coordinator.ftpAddress = ""
+
+        state.validateFTPAddress()
+
+        XCTAssertNotNil(state.ftpValidationError)
+        XCTAssertFalse(state.ftpAddressValidated)
+    }
+
+    func testValidateFTPAddressWithInvalidPort() {
+        let store = InMemoryPreferencesStore()
+        let state = AppState(preferences: store)
+        state.coordinator.transportMode = .network
+        state.coordinator.ftpAddress = "192.168.0.96:abc"
+
+        state.validateFTPAddress()
+
+        XCTAssertNotNil(state.ftpValidationError)
+        XCTAssertFalse(state.ftpAddressValidated)
+    }
+
+    func testValidateFTPAddressWithHostOnly() {
+        let store = InMemoryPreferencesStore()
+        let state = AppState(preferences: store)
+        state.coordinator.transportMode = .network
+        state.coordinator.ftpAddress = "192.168.0.96"
+
+        state.validateFTPAddress()
+
+        // Host only should be valid — uses default port
+        XCTAssertNil(state.ftpValidationError)
+        XCTAssertTrue(state.ftpAddressValidated)
     }
 
     func testDefaultMTPModeStartsDisconnected() {

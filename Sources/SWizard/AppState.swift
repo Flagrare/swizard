@@ -104,8 +104,8 @@ final class AppState {
                         productID: NintendoSwitchUSB.mtpProductID
                     ) != nil
                 case .network:
-                    // Network mode: "connected" when user has entered a valid FTP address
-                    found = FTPConnectionInfo.parse(coordinator.ftpAddress) != nil
+                    // Network mode: "connected" when user validated FTP address
+                    found = ftpAddressValidated
                 }
 
                 if found != wasConnected {
@@ -214,6 +214,30 @@ final class AppState {
         } catch {
             diagnosticsExportStatusMessage = "Failed to export diagnostics: \(error.localizedDescription)"
         }
+    }
+
+    // MARK: - FTP Address Validation
+
+    var ftpValidationError: String?
+    var ftpAddressValidated: Bool = false
+
+    func validateFTPAddress() {
+        let address = coordinator.ftpAddress.trimmingCharacters(in: .whitespaces)
+
+        if address.isEmpty {
+            ftpValidationError = "Enter the IP address shown on your Switch"
+            ftpAddressValidated = false
+            return
+        }
+
+        guard FTPConnectionInfo.parse(address) != nil else {
+            ftpValidationError = "Invalid format. Use IP:port (e.g., 192.168.0.96:5000)"
+            ftpAddressValidated = false
+            return
+        }
+
+        ftpValidationError = nil
+        ftpAddressValidated = true
     }
 
     // MARK: - MTP Connection Test
