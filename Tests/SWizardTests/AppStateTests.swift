@@ -105,48 +105,57 @@ final class AppStateTests: XCTestCase {
 
     // MARK: - FTP address validation
 
-    func testValidateFTPAddressWithValidInput() {
+    func testEnterValidAddressAndClickConnect_ShowsReady() async {
         let store = InMemoryPreferencesStore()
         let state = AppState(preferences: store)
         state.coordinator.transportMode = .network
+
+        // User types address
         state.coordinator.ftpAddress = "192.168.0.96:5000"
-
+        // User clicks Connect
         state.validateFTPAddress()
 
+        // Should show ready (no error, connection status green)
+        state.startMonitoring()
+        try? await Task.sleep(for: .seconds(1.5))
         XCTAssertNil(state.ftpValidationError)
-        XCTAssertTrue(state.ftpAddressValidated)
+        XCTAssertTrue(state.isDeviceConnected)
+        state.stopMonitoring()
     }
 
-    func testValidateFTPAddressWithEmptyInput() {
+    func testClickConnectWithEmptyAddress_ShowsError() {
         let store = InMemoryPreferencesStore()
         let state = AppState(preferences: store)
         state.coordinator.transportMode = .network
+
+        // User leaves address empty and clicks Connect
         state.coordinator.ftpAddress = ""
-
         state.validateFTPAddress()
 
+        // Should show error message
         XCTAssertNotNil(state.ftpValidationError)
-        XCTAssertFalse(state.ftpAddressValidated)
     }
 
-    func testValidateFTPAddressWithInvalidPort() {
+    func testClickConnectWithInvalidPort_ShowsError() {
         let store = InMemoryPreferencesStore()
         let state = AppState(preferences: store)
         state.coordinator.transportMode = .network
+
+        // User types invalid port
         state.coordinator.ftpAddress = "192.168.0.96:abc"
-
         state.validateFTPAddress()
 
+        // Should show error message
         XCTAssertNotNil(state.ftpValidationError)
-        XCTAssertFalse(state.ftpAddressValidated)
     }
 
-    func testValidateFTPAddressWithHostOnly() {
+    func testEnterHostOnly_DefaultsPort_ShowsReady() {
         let store = InMemoryPreferencesStore()
         let state = AppState(preferences: store)
         state.coordinator.transportMode = .network
-        state.coordinator.ftpAddress = "192.168.0.96"
 
+        // User types just the IP without port
+        state.coordinator.ftpAddress = "192.168.0.96"
         state.validateFTPAddress()
 
         // Host only should be valid — uses default port
