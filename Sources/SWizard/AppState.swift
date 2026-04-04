@@ -78,7 +78,7 @@ final class AppState {
         case .mtp:
             "On your Switch, open DBI → \"Run MTP responder\". SWizard will ask for your admin password once to claim USB from macOS."
         case .network:
-            "Drop files, click Install, then on your Switch: DBI → Run HTTP server → enter the URL shown below."
+            "On your Switch: DBI → Start FTP → Install on SD Card. Enter the IP:port shown on the Switch."
         }
     }
 

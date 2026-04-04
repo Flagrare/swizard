@@ -201,17 +201,20 @@ final class InstallationCoordinatorTests: XCTestCase {
         let coordinator = InstallationCoordinator(transport: IdleMockTransport())
         coordinator.transportMode = .network
 
+        // FTP mode needs a valid address — without it, should reach error
+        coordinator.ftpAddress = ""
+
         let url = try! createTempFile(name: "net_info.nsp", content: Data(repeating: 0, count: 10))
         coordinator.queueFiles([url])
         coordinator.startInstallation()
 
         try? await Task.sleep(for: .seconds(0.5))
 
-        // Should have networkInfo set (IP:port)
-        XCTAssertNotNil(coordinator.networkInfo)
-        XCTAssertTrue(coordinator.networkInfo?.contains(":5000") ?? false)
-
-        coordinator.cancel()
+        // Empty FTP address should produce error state
+        if case .error = coordinator.state { } else {
+            XCTFail("Expected .error for empty FTP address, got \(coordinator.state)")
+        }
+        XCTAssertTrue(coordinator.logs.contains(where: { $0.message.contains("Invalid FTP address") }))
         cleanup(url)
     }
 

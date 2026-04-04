@@ -58,8 +58,8 @@ struct ContentView: View {
                 installHelpBanner
             }
 
-            if let networkInfo = appState.coordinator.networkInfo {
-                networkInfoBanner(address: networkInfo)
+            if appState.coordinator.transportMode == .network {
+                ftpAddressField
             }
 
             Divider()
@@ -192,21 +192,25 @@ struct ContentView: View {
         .padding(10)
     }
 
-    private func networkInfoBanner(address: String) -> some View {
-        HStack(spacing: 10) {
+    private var ftpAddressField: some View {
+        HStack(spacing: 8) {
             Image(systemName: "wifi")
-                .foregroundStyle(.green)
+                .foregroundStyle(.blue)
 
-            VStack(alignment: .leading, spacing: 2) {
-                Text("Server running")
-                    .font(.subheadline.weight(.semibold))
-                Text("http://\(address)")
-                    .font(.system(.caption, design: .monospaced))
-                    .foregroundStyle(.secondary)
-                    .textSelection(.enabled)
-            }
+            Text("Switch FTP:")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+
+            TextField("192.168.0.96:5000", text: Binding(
+                get: { appState.coordinator.ftpAddress },
+                set: { appState.coordinator.ftpAddress = $0 }
+            ))
+            .font(.system(.caption, design: .monospaced))
+            .textFieldStyle(.roundedBorder)
+            .frame(maxWidth: 180)
         }
-        .padding(10)
+        .padding(.horizontal)
+        .padding(.vertical, 4)
     }
 
     // MARK: - Right Panel

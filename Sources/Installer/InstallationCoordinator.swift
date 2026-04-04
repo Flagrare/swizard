@@ -39,20 +39,23 @@ public final class InstallationCoordinator {
     private let session: DBISession
     private let sessionDelegateAdapter: SessionDelegateAdapter
     private let reconnectPolicy: ReconnectPolicy
-    private let networkServer = NetworkInstallServer()
+    private let ftpClient: any FTPUploadClientProtocol
     private var installTask: Task<Void, Never>?
     private var queuedURLs: [URL] = []
+    public var ftpAddress: String = ""
     public private(set) var networkInfo: String?
 
     public init(
         transport: (any TransportProtocol)? = nil,
         mtpDevice: (any MTPDeviceProtocol)? = nil,
         mtpSession: (any MTPSessionProtocol)? = nil,
+        ftpClient: (any FTPUploadClientProtocol)? = nil,
         reconnectPolicy: ReconnectPolicy = .default
     ) {
         self.transport = transport ?? USBTransport().withRetry()
         self.mtpDevice = mtpDevice ?? MTPDevice()
         self.mtpSession = mtpSession ?? PrivilegedMTPSession()
+        self.ftpClient = ftpClient ?? FTPUploadClient()
         self.reconnectPolicy = reconnectPolicy
         let adapter = SessionDelegateAdapter()
         self.sessionDelegateAdapter = adapter
@@ -94,14 +97,14 @@ public final class InstallationCoordinator {
     public func cancel() {
         installTask?.cancel()
         installTask = nil
-        networkServer.stop()
+        // FTP client uses curl Process which is killed when task is cancelled
         networkInfo = nil
         log("Cancellation requested")
     }
 
     public func reset() {
         cancel()
-        networkServer.stop()
+        // FTP client uses curl Process which is killed when task is cancelled
         state = .idle
         progress.clear()
         logs.removeAll()
@@ -224,39 +227,50 @@ public final class InstallationCoordinator {
 
     private func runNetworkInstallation() async {
         state = .connecting
-        log("Starting HTTP server for network install...", level: .info)
 
-        do {
-            // Capture file names before entering @Sendable closure
-            let fileNames = queuedURLs.map(\.lastPathComponent)
-            let urlList = try networkServer.start(files: queuedURLs) { [weak self] fileIndex, bytesSent, _ in
-                let fileName = fileIndex < fileNames.count ? fileNames[fileIndex] : "file \(fileIndex)"
-                Task { @MainActor in
-                    self?.progress.updateProgress(fileName: fileName, transferredBytes: bytesSent)
-                }
-            }
-
-            let host = NetworkInstallServer.localIPAddress() ?? "localhost"
-            networkInfo = "\(host):5000"
-            state = .transferring
-            log("HTTP server running at \(host):5000", level: .info)
-            log("File URLs:\n\(urlList)", level: .debug)
-            log("On your Switch: DBI → Run HTTP server → enter this URL", level: .info)
-
-            // Keep server running until cancelled
-            while !Task.isCancelled {
-                try await Task.sleep(for: .seconds(1))
-            }
-        } catch is CancellationError {
-            state = .idle
-            log("Network server stopped", level: .warning)
-        } catch {
-            state = .error(error.localizedDescription)
-            log("Error: \(error.localizedDescription)", level: .error)
+        guard let connection = FTPConnectionInfo.parse(ftpAddress) else {
+            state = .error("Invalid FTP address. Enter Switch IP:port (e.g., 192.168.0.96:5000)")
+            log("Invalid FTP address: \(ftpAddress)", level: .error)
+            return
         }
 
-        networkServer.stop()
-        networkInfo = nil
+        log("Connecting to Switch FTP at \(connection.displayString)...", level: .info)
+
+        do {
+            state = .transferring
+
+            for url in queuedURLs {
+                let fileName = url.lastPathComponent
+                let fileSize = (try? FileManager.default.attributesOfItem(atPath: url.path)[.size] as? UInt64) ?? 0
+
+                try await ftpClient.upload(
+                    file: url,
+                    to: connection,
+                    onProgress: { [weak self] percentage in
+                        Task { @MainActor in
+                            let bytes = UInt64(Double(fileSize) * percentage / 100.0)
+                            self?.progress.updateProgress(fileName: fileName, transferredBytes: bytes)
+                        }
+                    },
+                    onLog: { [weak self] (message: String) in
+                        Task { @MainActor in
+                            self?.log("[FTP] \(message)", level: .debug)
+                        }
+                    }
+                )
+
+                log("\(fileName) installed via FTP", level: .info)
+            }
+
+            state = .complete
+            log("All files installed via FTP!", level: .info)
+        } catch is CancellationError {
+            state = .idle
+            log("FTP transfer cancelled", level: .warning)
+        } catch {
+            state = .error(error.localizedDescription)
+            log("FTP error: \(error.localizedDescription)", level: .error)
+        }
     }
 
     public func log(_ message: String, level: LogLevel = .info) {
