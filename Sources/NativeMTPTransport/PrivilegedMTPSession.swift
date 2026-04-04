@@ -383,40 +383,59 @@ public final class PrivilegedMTPSession: @unchecked Sendable {
                 infoContainer.append(objInfo)
                 try writeContainer(infoContainer)
                 let infoResp = try readContainer() // response
-                // Log the response code (bytes 6-7 of container)
+                // Log full response including params
                 if infoResp.count >= 8 {
                     var respCode: UInt16 = 0
                     _ = withUnsafeMutableBytes(of: &respCode) { infoResp.dropFirst(6).copyBytes(to: $0) }
                     respCode = UInt16(littleEndian: respCode)
                     print("LOG:SendObjectInfo response: 0x\\(String(respCode, radix: 16))")
-                    if respCode != 0x2001 { print("ERROR:SendObjectInfo rejected with code 0x\\(String(respCode, radix: 16))"); exit(1) }
+                    if respCode != 0x2001 { print("ERROR:SendObjectInfo rejected"); exit(1) }
+
+                    // Extract params from response (after 12-byte header)
+                    if infoResp.count >= 24 {
+                        var respStorageID: UInt32 = 0; var respParentID: UInt32 = 0; var respObjectHandle: UInt32 = 0
+                        _ = withUnsafeMutableBytes(of: &respStorageID) { infoResp.dropFirst(12).copyBytes(to: $0) }
+                        _ = withUnsafeMutableBytes(of: &respParentID) { infoResp.dropFirst(16).copyBytes(to: $0) }
+                        _ = withUnsafeMutableBytes(of: &respObjectHandle) { infoResp.dropFirst(20).copyBytes(to: $0) }
+                        respStorageID = UInt32(littleEndian: respStorageID)
+                        respParentID = UInt32(littleEndian: respParentID)
+                        respObjectHandle = UInt32(littleEndian: respObjectHandle)
+                        print("LOG:  Assigned: storage=\\(respStorageID) parent=\\(respParentID) handle=\\(respObjectHandle)")
+                    }
                 }
                 print("LOG:ObjectInfo sent for \\(file.name)")
 
-                // SendObject — MTP: Command container, then Data container (header + first chunk together), then remaining chunks
+                // SendObject — MTP: Command, then Data container (header + all file data streamed)
                 let objTx = nextTx()
 
                 // 1. Send SendObject command
+                print("LOG:Sending SendObject command (tx=\\(objTx))...")
                 try writeContainer(buildCmd(code: 0x100D, tx: objTx))
+                print("LOG:SendObject command sent")
 
-                // 2. Build data container header + first chunk TOGETHER in one USB transfer
+                // 2. Open file and prepare data container
                 let handle = try FileHandle(forReadingFrom: URL(fileURLWithPath: file.path))
                 defer { handle.closeFile() }
 
-                let chunkSize = 512 * 1024
+                // 3. Send data container header (12 bytes) SEPARATELY first
+                var dataHeader = Data()
+                let containerLen = UInt32(min(UInt64(12) + file.size, UInt64(UInt32.max)))
+                withUnsafeBytes(of: containerLen.littleEndian) { dataHeader.append(contentsOf: $0) }
+                withUnsafeBytes(of: UInt16(2).littleEndian) { dataHeader.append(contentsOf: $0) }
+                withUnsafeBytes(of: UInt16(0x100D).littleEndian) { dataHeader.append(contentsOf: $0) }
+                withUnsafeBytes(of: objTx.littleEndian) { dataHeader.append(contentsOf: $0) }
+
+                let chunkSize = 262144 // 256KB — matches libmtp
                 let firstChunk = handle.readData(ofLength: chunkSize)
 
-                var dataPacket = Data()
-                let containerLen = UInt32(min(UInt64(12) + file.size, UInt64(UInt32.max)))
-                withUnsafeBytes(of: containerLen.littleEndian) { dataPacket.append(contentsOf: $0) }
-                withUnsafeBytes(of: UInt16(2).littleEndian) { dataPacket.append(contentsOf: $0) } // Data type
-                withUnsafeBytes(of: UInt16(0x100D).littleEndian) { dataPacket.append(contentsOf: $0) }
-                withUnsafeBytes(of: objTx.littleEndian) { dataPacket.append(contentsOf: $0) }
-                dataPacket.append(firstChunk) // header + first chunk in one transfer
-
-                let headerMD = NSMutableData(data: dataPacket)
-                var headerBW: Int = 0
-                try outP.__sendIORequest(with: headerMD, bytesTransferred: &headerBW, completionTimeout: 10.0)
+                // Send header + first chunk together
+                var firstPacket = dataHeader
+                firstPacket.append(firstChunk)
+                let firstMD = NSMutableData(data: firstPacket)
+                var firstBW: Int = 0
+                print("LOG:Sending data header + first chunk (\\(firstPacket.count) bytes)...")
+                try outP.__sendIORequest(with: firstMD, bytesTransferred: &firstBW, completionTimeout: 30.0)
+                print("LOG:First packet sent (\\(firstBW) bytes)")
 
                 // 3. Stream remaining file data (first chunk already sent above)
                 var totalSent: UInt64 = UInt64(firstChunk.count)
