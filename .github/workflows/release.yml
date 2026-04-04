@@ -70,8 +70,8 @@ jobs:
             git push origin "$VERSION"
           fi
 
-      - name: Install build dependency
-        run: brew install libusb
+      - name: Install build dependencies
+        run: brew install libusb libmtp
 
       - name: Build and package app bundle
         run: |
