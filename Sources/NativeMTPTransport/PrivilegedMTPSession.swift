@@ -341,11 +341,11 @@ public final class PrivilegedMTPSession: @unchecked Sendable {
 
                 // SendObjectInfo — target the install folder
                 let infoTx = nextTx()
-                try writeContainer(buildCmd(code: 0x100C, tx: infoTx, params: [installStorageID, installFolderHandle]))
+                try writeContainer(buildCmd(code: 0x100C, tx: infoTx, params: [installStorageID, 0xFFFFFFFF]))
 
                 // Build ObjectInfo dataset
                 var objInfo = Data()
-                withUnsafeBytes(of: storageID.littleEndian) { objInfo.append(contentsOf: $0) } // StorageID
+                withUnsafeBytes(of: installStorageID.littleEndian) { objInfo.append(contentsOf: $0) } // StorageID
                 withUnsafeBytes(of: UInt16(0x3000).littleEndian) { objInfo.append(contentsOf: $0) } // ObjectFormat (undefined)
                 withUnsafeBytes(of: UInt16(0).littleEndian) { objInfo.append(contentsOf: $0) } // ProtectionStatus
                 withUnsafeBytes(of: UInt32(file.size > UInt32.max ? 0xFFFFFFFF : UInt32(file.size)).littleEndian) { objInfo.append(contentsOf: $0) } // ObjectCompressedSize

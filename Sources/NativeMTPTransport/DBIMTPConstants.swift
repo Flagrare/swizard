@@ -10,6 +10,12 @@ public enum DBIMTPConstants {
     /// Fallback keyword for any install storage (NAND or SD).
     public static let installKeyword = "install"
 
+    /// MTP parent handle for root of a storage (no parent folder).
+    public static let rootParentHandle: UInt32 = 0xFFFFFFFF
+
+    /// MTP "all formats" filter for GetObjectHandles.
+    public static let allFormatsFilter: UInt32 = 0x00000000
+
     /// MTP ObjectFormat code for undefined/generic files.
     public static let objectFormatUndefined: UInt16 = 0x3000
 

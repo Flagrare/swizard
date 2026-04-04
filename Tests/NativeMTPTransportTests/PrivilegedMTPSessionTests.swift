@@ -82,6 +82,30 @@ final class PrivilegedMTPSessionTests: XCTestCase {
                        "Script should prefer SD install storage")
     }
 
+    func testScriptHasNoStaleVariableNames() {
+        let script = PrivilegedMTPSession.buildScript(
+            vendorID: NintendoSwitchUSB.vendorID,
+            productID: NintendoSwitchUSB.mtpProductID,
+            files: [PrivilegedMTPSession.FileToInstall(path: "/tmp/test.nsp", name: "test.nsp", size: 100)]
+        )
+
+        // Should not reference old variable names that were renamed
+        XCTAssertFalse(script.contains("installFolderHandle"), "Stale variable: installFolderHandle")
+        XCTAssertFalse(script.contains("storageResp"), "Stale variable: storageResp")
+        XCTAssertFalse(script.contains("handlesData"), "Stale variable: handlesData (should be _ =)")
+    }
+
+    func testScriptUsesInstallStorageIDNotStorageID() {
+        let script = PrivilegedMTPSession.buildScript(
+            vendorID: NintendoSwitchUSB.vendorID,
+            productID: NintendoSwitchUSB.mtpProductID,
+            files: [PrivilegedMTPSession.FileToInstall(path: "/tmp/test.nsp", name: "test.nsp", size: 100)]
+        )
+
+        // SendObjectInfo and ObjectInfo builder should use installStorageID
+        XCTAssertTrue(script.contains("installStorageID"))
+    }
+
     // MARK: - File paths
 
     func testScriptIncludesFilePaths() {

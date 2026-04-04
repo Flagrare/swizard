@@ -38,6 +38,10 @@ struct ContentView: View {
         VStack(alignment: .leading, spacing: 0) {
             transportModePicker
 
+            if appState.coordinator.transportMode == .mtp {
+                mtpAdminWarning
+            }
+
             Divider()
 
             ConnectionStatusView(
@@ -47,10 +51,6 @@ struct ContentView: View {
 
             if appState.coordinator.transportMode == .mtp {
                 mtpTestSection
-            }
-
-            if appState.coordinator.transportMode == .mtp {
-                mtpAdminWarning
                 mtpDestinationPicker
             }
 
