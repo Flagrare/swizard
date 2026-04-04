@@ -82,42 +82,37 @@ final class AppState {
     }
 
     private func runMTPDiagnostic() async {
-        logMTP("Starting MTP connection diagnostic...", level: .info)
+        logMTP("Starting MTP connection test...", level: .info)
 
-        // Step 1: Scan for device
+        // Step 1: Scan for device (no admin needed)
         let devices = USBDeviceScanner.findDevices(vendorID: NintendoSwitchUSB.vendorID)
         if devices.isEmpty {
             logMTP("No Nintendo USB device found", level: .error)
-            mtpTestResult = "FAILED — No Nintendo device found"
+            mtpTestResult = "FAILED — No Nintendo device found. Is the Switch connected with DBI MTP running?"
             return
         }
         for d in devices {
             logMTP("Found: \(d.description)", level: .info)
         }
 
-        // Step 2: Try adapter open (includes privileged claim)
-        logMTP("Requesting admin privileges for USB claim...", level: .warning)
-        let adapter = mtpAdapterFactory()
+        // Step 2: Run a quick MTP handshake test via PrivilegedMTPSession
+        // This prompts for admin password, then does DeviceCapture → OpenSession → CloseSession
+        logMTP("Testing MTP handshake (will ask for admin password)...", level: .warning)
+
+        let session = PrivilegedMTPSession()
         do {
-            try await adapter.open(
-                vendorID: NintendoSwitchUSB.vendorID,
-                productID: NintendoSwitchUSB.mtpProductID
+            // Install with empty file list — just tests the handshake
+            try await session.install(
+                files: [],
+                onProgress: { _, _, _ in },
+                onLog: { [weak self] msg in
+                    Task { @MainActor in self?.logMTP(msg, level: .debug) }
+                }
             )
-            logMTP("SUCCESS — Device and interface opened!", level: .info)
+            logMTP("SUCCESS — MTP handshake completed!", level: .info)
             mtpTestResult = "SUCCESS — MTP access confirmed!"
-
-            await adapter.close()
-            logMTP("Device closed cleanly", level: .debug)
         } catch {
-            logMTP("Open failed: \(error.localizedDescription)", level: .error)
-
-            // Extra diagnostic: check what's in IORegistry after the attempt
-            logMTP("Post-failure device scan:", level: .debug)
-            let postDevices = USBDeviceScanner.findDevices(vendorID: NintendoSwitchUSB.vendorID)
-            for d in postDevices {
-                logMTP("  Still present: \(d.description)", level: .debug)
-            }
-
+            logMTP("MTP handshake failed: \(error.localizedDescription)", level: .error)
             let found = devices.map(\.description).joined(separator: ", ")
             mtpTestResult = "FAILED — \(found). \(error.localizedDescription)"
         }
