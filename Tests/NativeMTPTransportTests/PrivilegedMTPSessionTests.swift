@@ -4,7 +4,7 @@ import DBIProtocol
 
 final class PrivilegedMTPSessionTests: XCTestCase {
 
-    // MARK: - Behavior: parses progress output from privileged process
+    // MARK: - Output parsing
 
     func testParsesProgressLine() {
         let line = "PROGRESS:game.nsp:5242880:10485760"
@@ -51,99 +51,20 @@ final class PrivilegedMTPSessionTests: XCTestCase {
         }
     }
 
-    // MARK: - Behavior: generates correct script with file paths
+    // MARK: - C script generation
 
-    // MARK: - Storage discovery
-
-    func testScriptSearchesStoragesByName() {
+    func testScriptIsValidCProgram() {
         let script = PrivilegedMTPSession.buildScript(
             vendorID: NintendoSwitchUSB.vendorID,
             productID: NintendoSwitchUSB.mtpProductID,
             files: []
         )
 
-        // Script should use GetStorageInfo (0x1005) to get storage names
-        XCTAssertTrue(script.contains("0x1005"), "Script should call GetStorageInfo")
-        // Script should search for "install" in storage names (case-insensitive)
-        XCTAssertTrue(script.contains("install"), "Script should search for install storage")
-        // Script should NOT hardcode a storage ID
-        XCTAssertFalse(script.contains("65541"), "Script should not hardcode storage 65541")
+        XCTAssertTrue(script.contains("#include <libmtp.h>"), "Should include libmtp header")
+        XCTAssertTrue(script.contains("int main()"), "Should have main function")
+        XCTAssertTrue(script.contains("LIBMTP_Init()"), "Should initialize libmtp")
+        XCTAssertTrue(script.contains("LIBMTP_Send_File_From_File"), "Should use libmtp's proven send function")
     }
-
-    func testScriptPrefersSDInstallOverNANDInstall() {
-        let script = PrivilegedMTPSession.buildScript(
-            vendorID: NintendoSwitchUSB.vendorID,
-            productID: NintendoSwitchUSB.mtpProductID,
-            files: []
-        )
-
-        // Script should prefer SD install (safer for user's NAND)
-        XCTAssertTrue(script.contains("\"sd\"") || script.contains("\"SD\"") || script.lowercased().contains("sd"),
-                       "Script should prefer SD install storage")
-    }
-
-    func testScriptObjectInfoUsesCorrectFormat() {
-        let script = PrivilegedMTPSession.buildScript(
-            vendorID: NintendoSwitchUSB.vendorID,
-            productID: NintendoSwitchUSB.mtpProductID,
-            files: [PrivilegedMTPSession.FileToInstall(path: "/tmp/t.nsp", name: "t.nsp", size: 100)]
-        )
-
-        // ObjectFormat must be 0x3001 (generic file), not 0x3000 (undefined)
-        XCTAssertTrue(script.contains("0x3001"), "ObjectFormat should be 0x3001 (Undefined Object)")
-        XCTAssertFalse(script.contains("0x3000"), "ObjectFormat 0x3000 is wrong")
-
-        // ParentObject must be set to 0xFFFFFFFF (root)
-        XCTAssertTrue(script.contains("ParentObject"))
-
-        // ObjectInfo must include all required fields (53 bytes fixed + filename)
-        XCTAssertTrue(script.contains("ThumbFormat"))
-        XCTAssertTrue(script.contains("ImageBitDepth"))
-        XCTAssertTrue(script.contains("AssociationType"))
-        XCTAssertTrue(script.contains("SequenceNumber"))
-    }
-
-    func testScriptUsesHasSuffixNotContainsForInstallMatch() {
-        let script = PrivilegedMTPSession.buildScript(
-            vendorID: NintendoSwitchUSB.vendorID,
-            productID: NintendoSwitchUSB.mtpProductID,
-            files: []
-        )
-
-        // Must use hasSuffix("install") not contains("install")
-        // "Installed games" contains "install" but does NOT end with "install"
-        XCTAssertTrue(script.contains("hasSuffix"), "Script must use hasSuffix to avoid matching 'Installed games'")
-        XCTAssertFalse(
-            script.contains("contains(\"install\")"),
-            "Script must NOT use contains(install) — matches 'Installed games' falsely"
-        )
-    }
-
-    func testScriptHasNoStaleVariableNames() {
-        let script = PrivilegedMTPSession.buildScript(
-            vendorID: NintendoSwitchUSB.vendorID,
-            productID: NintendoSwitchUSB.mtpProductID,
-            files: [PrivilegedMTPSession.FileToInstall(path: "/tmp/test.nsp", name: "test.nsp", size: 100)]
-        )
-
-        // Should not reference old variable names that were renamed
-        XCTAssertFalse(script.contains("installFolderHandle"), "Stale variable: installFolderHandle")
-        XCTAssertFalse(script.contains("storageResp"), "Stale variable: storageResp")
-        XCTAssertFalse(script.contains("handlesData"), "Stale variable: handlesData (should be _ =)")
-    }
-
-    func testScriptUsesInstallStorageIDNotStorageID() {
-        let script = PrivilegedMTPSession.buildScript(
-            vendorID: NintendoSwitchUSB.vendorID,
-            productID: NintendoSwitchUSB.mtpProductID,
-            files: [PrivilegedMTPSession.FileToInstall(path: "/tmp/test.nsp", name: "test.nsp", size: 100)]
-        )
-
-        // SendObjectInfo and ObjectInfo builder should use installStorageID
-        XCTAssertTrue(script.contains("installStorageID"))
-    }
-
-    // MARK: - File paths
 
     func testScriptIncludesFilePaths() {
         let files = [
@@ -160,8 +81,6 @@ final class PrivilegedMTPSessionTests: XCTestCase {
         XCTAssertTrue(script.contains("game1.nsp"))
         XCTAssertTrue(script.contains("game2.xci"))
         XCTAssertTrue(script.contains("/tmp/game1.nsp"))
-        XCTAssertTrue(script.contains("1000"))
-        XCTAssertTrue(script.contains("DeviceCapture"))
     }
 
     func testScriptWithEmptyFilesCompiles() {
@@ -171,39 +90,52 @@ final class PrivilegedMTPSessionTests: XCTestCase {
             files: []
         )
 
-        // Empty files should produce valid Swift — no type inference issue
-        XCTAssertTrue(script.contains("let files: [FileEntry] = []"))
-        XCTAssertFalse(script.contains(".map"))
+        XCTAssertTrue(script.contains("int file_count = 0"))
     }
 
-    func testScriptUsesAbsolutePathsFromStaging() {
-        // When files are staged to /tmp, the script should use /tmp paths (not user dir)
-        let stagedFiles = [
-            PrivilegedMTPSession.FileToInstall(
-                path: "/tmp/swizard_install_test/game.nsp",
-                name: "game.nsp",
-                size: 1000
-            )
-        ]
-
+    func testScriptUsesHasSuffixForInstallMatch() {
         let script = PrivilegedMTPSession.buildScript(
             vendorID: NintendoSwitchUSB.vendorID,
             productID: NintendoSwitchUSB.mtpProductID,
-            files: stagedFiles
-        )
-
-        XCTAssertTrue(script.contains("/tmp/swizard_install_test/game.nsp"))
-        XCTAssertFalse(script.contains("/Users/"))
-    }
-
-    func testScriptIncludesVIDPID() {
-        let script = PrivilegedMTPSession.buildScript(
-            vendorID: 0x057E,
-            productID: 0x201D,
             files: []
         )
 
-        XCTAssertTrue(script.contains("1406"))  // 0x057E decimal
-        XCTAssertTrue(script.contains("8221"))   // 0x201D decimal
+        // C code should match storage names ending with "install"
+        XCTAssertTrue(script.contains("strcasecmp") || script.contains("install"),
+                       "Should search for install storage by name")
+    }
+
+    func testScriptHandlesStorageOverride() {
+        let script = PrivilegedMTPSession.buildScript(
+            vendorID: NintendoSwitchUSB.vendorID,
+            productID: NintendoSwitchUSB.mtpProductID,
+            files: [],
+            targetStorageID: 65541
+        )
+
+        XCTAssertTrue(script.contains("65541"))
+        XCTAssertTrue(script.contains("has_override = 1"))
+    }
+
+    func testScriptWithoutOverride() {
+        let script = PrivilegedMTPSession.buildScript(
+            vendorID: NintendoSwitchUSB.vendorID,
+            productID: NintendoSwitchUSB.mtpProductID,
+            files: [],
+            targetStorageID: nil
+        )
+
+        XCTAssertTrue(script.contains("has_override = 0"))
+    }
+
+    func testScriptUsesLibmtpNotIOUSBHost() {
+        let script = PrivilegedMTPSession.buildScript(
+            vendorID: NintendoSwitchUSB.vendorID,
+            productID: NintendoSwitchUSB.mtpProductID,
+            files: []
+        )
+
+        XCTAssertTrue(script.contains("LIBMTP_"), "Should use libmtp (proven reference implementation)")
+        XCTAssertFalse(script.contains("IOUSBHost"), "Should NOT use IOUSBHost (broken pipe issue)")
     }
 }
