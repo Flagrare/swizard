@@ -265,20 +265,75 @@ public final class PrivilegedMTPSession: @unchecked Sendable {
             }
             print("LOG:Using storage ID \\(storageID)")
 
-            // MTP GetObjectHandles to find install folder
+            // MTP GetObjectHandles for root
             let handlesTx = nextTx()
             try writeContainer(buildCmd(code: 0x1007, tx: handlesTx, params: [storageID, 0, 0xFFFFFFFF]))
-            let _ = try readContainer() // handles data
+            let handlesData = try readContainer() // handles data
             let _ = try readContainer() // response
-            print("LOG:Got object handles")
+
+            // Parse object handles from data container
+            var objectHandles: [UInt32] = []
+            let handlesPayload = Data(handlesData.dropFirst(12))
+            if handlesPayload.count >= 4 {
+                var handleCount: UInt32 = 0
+                _ = withUnsafeMutableBytes(of: &handleCount) { handlesPayload.copyBytes(to: $0) }
+                handleCount = UInt32(littleEndian: handleCount)
+                for i in 0..<Int(handleCount) {
+                    let offset = 4 + i * 4
+                    if offset + 4 <= handlesPayload.count {
+                        var h: UInt32 = 0
+                        _ = withUnsafeMutableBytes(of: &h) { handlesPayload.dropFirst(offset).copyBytes(to: $0) }
+                        objectHandles.append(UInt32(littleEndian: h))
+                    }
+                }
+            }
+            print("LOG:Found \\(objectHandles.count) objects in storage")
+
+            // Find install folder by checking each object's name
+            var installFolderHandle: UInt32 = 0xFFFFFFFF
+            let installNames = ["sd install", "microsd install", "nand install", "install"]
+
+            for handle in objectHandles {
+                let infoTx2 = nextTx()
+                try writeContainer(buildCmd(code: 0x1008, tx: infoTx2, params: [handle]))
+                let objInfoData = try readContainer() // data
+                let _ = try readContainer() // response
+
+                // Parse filename from ObjectInfo — skip 12-byte container header + 52 bytes of fixed fields
+                let infoPayload = Data(objInfoData.dropFirst(12))
+                if infoPayload.count > 53 {
+                    let strLen = Int(infoPayload[52]) // MTP string length byte
+                    if strLen > 0 && infoPayload.count >= 53 + strLen * 2 {
+                        var nameChars: [UInt16] = []
+                        for j in 0..<(strLen - 1) { // -1 for null terminator
+                            let lo = UInt16(infoPayload[53 + j * 2])
+                            let hi = UInt16(infoPayload[53 + j * 2 + 1])
+                            nameChars.append(lo | (hi << 8))
+                        }
+                        let name = String(utf16CodeUnits: nameChars, count: nameChars.count)
+                        print("LOG:  Object \\(handle): \\(name)")
+
+                        if installNames.contains(name.lowercased()) {
+                            installFolderHandle = handle
+                            print("LOG:  → Using as install folder!")
+                        }
+                    }
+                }
+            }
+
+            if installFolderHandle == 0xFFFFFFFF {
+                print("LOG:No install folder found — using root (files may not auto-install)")
+            } else {
+                print("LOG:Install folder handle: \\(installFolderHandle)")
+            }
 
             // For each file: SendObjectInfo + SendObject
             for file in files {
                 print("LOG:Installing \\(file.name) (\\(file.size) bytes)")
 
-                // SendObjectInfo
+                // SendObjectInfo — target the install folder
                 let infoTx = nextTx()
-                try writeContainer(buildCmd(code: 0x100C, tx: infoTx, params: [storageID, 0xFFFFFFFF]))
+                try writeContainer(buildCmd(code: 0x100C, tx: infoTx, params: [storageID, installFolderHandle]))
 
                 // Build ObjectInfo dataset
                 var objInfo = Data()
