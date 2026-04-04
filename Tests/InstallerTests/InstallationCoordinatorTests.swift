@@ -3,6 +3,7 @@ import XCTest
 @testable import DBIProtocol
 @testable import USBTransport
 @testable import MTPTransport
+@testable import NativeMTPTransport
 
 // MARK: - Simple mock transport for coordinator tests
 
@@ -95,16 +96,14 @@ final class InstallationCoordinatorTests: XCTestCase {
     func testMTPModeLogsAdminWarning() async {
         // Verify the coordinator logs the admin privilege warning when MTP starts.
         // We don't actually run the privileged session in tests (would prompt for password).
-        let coordinator = InstallationCoordinator(transport: IdleMockTransport())
+        let coordinator = InstallationCoordinator(transport: IdleMockTransport(), mtpSession: MockMTPSession())
         coordinator.transportMode = .mtp
 
         let url = try! createTempFile(name: "mtp_log.nsp", content: Data(repeating: 0, count: 10))
         coordinator.queueFiles([url])
         coordinator.startInstallation()
 
-        // Brief sleep — just enough for the first log messages before osascript runs
-        try? await Task.sleep(for: .seconds(0.3))
-        coordinator.cancel()
+        try? await Task.sleep(for: .seconds(0.5))
 
         XCTAssertTrue(coordinator.logs.contains(where: { $0.message.contains("admin privileges") }))
         cleanup(url)
@@ -162,18 +161,15 @@ final class InstallationCoordinatorTests: XCTestCase {
 
     @MainActor
     func testMTPModePassesThroughConnectingState() async {
-        let mockMTP = MockMTPDevice()
-        let coordinator = InstallationCoordinator(transport: IdleMockTransport(), mtpDevice: mockMTP)
+        let coordinator = InstallationCoordinator(transport: IdleMockTransport(), mtpSession: MockMTPSession())
         coordinator.transportMode = .mtp
 
         let url = try! createTempFile(name: "mtp_state.nsp", content: Data(repeating: 0, count: 10))
         coordinator.queueFiles([url])
         coordinator.startInstallation()
 
-        // Give the task a chance to start
-        try? await Task.sleep(for: .seconds(0.1))
+        try? await Task.sleep(for: .seconds(0.5))
 
-        // Should have logged the connecting message (proves .connecting was hit)
         XCTAssertTrue(coordinator.logs.contains(where: { $0.message.contains("Connecting to Switch (MTP)") }))
         cleanup(url)
     }
@@ -222,26 +218,20 @@ final class InstallationCoordinatorTests: XCTestCase {
     // MARK: - UX Journey: MTP retries on transient error
 
     @MainActor
-    func testMTPModeStartsInConnectingState() async {
-        // Verify MTP mode transitions to .connecting before running privileged session.
-        let coordinator = InstallationCoordinator(transport: IdleMockTransport())
+    func testMTPModeReachesErrorWithMockSession() async {
+        // MockMTPSession fails with deviceNotFound — verify coordinator reaches .error
+        let coordinator = InstallationCoordinator(transport: IdleMockTransport(), mtpSession: MockMTPSession())
         coordinator.transportMode = .mtp
 
-        let url = try! createTempFile(name: "mtp_state.nsp", content: Data(repeating: 0, count: 10))
+        let url = try! createTempFile(name: "mtp_err.nsp", content: Data(repeating: 0, count: 10))
         coordinator.queueFiles([url])
         coordinator.startInstallation()
 
-        try? await Task.sleep(for: .seconds(0.2))
-        // Should be in connecting state (before privileged session completes)
-        let isConnectingOrBeyond = coordinator.state == .connecting ||
-            coordinator.state == .transferring ||
-            coordinator.state == .complete
-        XCTAssertTrue(isConnectingOrBeyond || {
-            if case .error = coordinator.state { return true }
-            return false
-        }(), "Expected connecting/transferring/error, got \(coordinator.state)")
+        try? await Task.sleep(for: .seconds(0.5))
 
-        coordinator.cancel()
+        if case .error = coordinator.state { } else {
+            XCTFail("Expected .error, got \(coordinator.state)")
+        }
         cleanup(url)
     }
 
@@ -290,6 +280,26 @@ private final class MockMTPDevice: MTPDeviceProtocol, @unchecked Sendable {
     func sendFile(localPath: String, fileName: String, fileSize: UInt64,
                   parentFolderId: UInt32, storageId: UInt32,
                   progress: @escaping @Sendable (UInt64, UInt64) -> Bool) async throws {}
+}
+
+/// Mock MTP session that never prompts for password — fails immediately.
+private final class MockMTPSession: MTPSessionProtocol, @unchecked Sendable {
+    var shouldSucceed = false
+
+    func install(
+        files: [PrivilegedMTPSession.FileToInstall],
+        onProgress: @escaping @Sendable (String, UInt64, UInt64) -> Void,
+        onLog: @escaping @Sendable (String) -> Void
+    ) async throws {
+        onLog("Mock MTP session")
+        if shouldSucceed {
+            for file in files {
+                onProgress(file.name, file.size, file.size)
+            }
+        } else {
+            throw IOUSBHostError.deviceNotFound
+        }
+    }
 }
 
 /// MTP device that fails N times then succeeds — for testing retry behavior.

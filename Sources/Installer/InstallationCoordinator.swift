@@ -33,6 +33,7 @@ public final class InstallationCoordinator {
 
     private let transport: any TransportProtocol
     private let mtpDevice: any MTPDeviceProtocol
+    private let mtpSession: any MTPSessionProtocol
     private let fileServer = FileServer()
     private let session: DBISession
     private let sessionDelegateAdapter: SessionDelegateAdapter
@@ -45,10 +46,12 @@ public final class InstallationCoordinator {
     public init(
         transport: (any TransportProtocol)? = nil,
         mtpDevice: (any MTPDeviceProtocol)? = nil,
+        mtpSession: (any MTPSessionProtocol)? = nil,
         reconnectPolicy: ReconnectPolicy = .default
     ) {
         self.transport = transport ?? USBTransport().withRetry()
         self.mtpDevice = mtpDevice ?? MTPDevice()
+        self.mtpSession = mtpSession ?? PrivilegedMTPSession()
         self.reconnectPolicy = reconnectPolicy
         let adapter = SessionDelegateAdapter()
         self.sessionDelegateAdapter = adapter
@@ -186,10 +189,10 @@ public final class InstallationCoordinator {
             return PrivilegedMTPSession.FileToInstall(path: url.path, name: url.lastPathComponent, size: size)
         }
 
-        let session = PrivilegedMTPSession()
+        let mtpSess = mtpSession
 
         do {
-            try await session.install(
+            try await mtpSess.install(
                 files: files,
                 onProgress: { [weak self] fileName, sent, total in
                     Task { @MainActor in
