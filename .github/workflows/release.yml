@@ -143,26 +143,30 @@ jobs:
 
       - name: Generate release notes
         run: |
-          cat > RELEASE_NOTES.md <<EOF
-          ## SWizard ${VERSION}
+          PREVIOUS_TAG=$(git tag --sort=-creatordate | grep -Fxv "$VERSION" | head -n1 || true)
 
-          Alpha release of SWizard for Nintendo Switch DBI backend installs.
-
-          ### Download
-          - Use \`SWizard-${VERSION}-macos-arm64.zip\`
-          - Unzip the archive
-          - Install and open from Terminal:
-            \`ditto "$HOME/Downloads/SWizard-${VERSION}/SWizard.app" "/Applications/SWizard.app" && xattr -dr com.apple.quarantine "/Applications/SWizard.app" && open "/Applications/SWizard.app"\`
-
-          ### How to use
-          1. On Switch DBI, select **Run DBI backend**
-          2. Connect USB to Mac and open SWizard from Applications
-          3. Drag your NSP/NSZ/XCI/XCZ files and click **Install**
-
-          ### Notes
-          - This hobby alpha build is unsigned/not notarized
-          - Right-click Open may still be blocked on some systems; use the Terminal install command above
-          EOF
+          {
+            echo "## SWizard ${VERSION}"
+            echo ""
+            echo "Alpha release of SWizard for Nintendo Switch installs."
+            echo ""
+            echo "### What's New"
+            if [[ -n "$PREVIOUS_TAG" ]]; then
+              git log --pretty='- %s' "${PREVIOUS_TAG}..${VERSION}"
+            else
+              echo "- Initial release"
+            fi
+            echo ""
+            echo "### Download"
+            echo "- Use \\`SWizard-${VERSION}-macos-arm64.zip\\`"
+            echo "- Unzip the archive"
+            echo "- Install and open from Terminal:"
+            echo "  \\`ditto \"\$HOME/Downloads/SWizard-${VERSION}/SWizard.app\" \"/Applications/SWizard.app\" && xattr -dr com.apple.quarantine \"/Applications/SWizard.app\" && open \"/Applications/SWizard.app\"\\`"
+            echo ""
+            echo "### Notes"
+            echo "- This hobby alpha build is unsigned/not notarized"
+            echo "- Right-click Open may still be blocked on some systems; use the Terminal install command above"
+          } > RELEASE_NOTES.md
 
       - name: Publish GitHub release
         if: github.event_name == 'workflow_dispatch'
