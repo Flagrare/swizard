@@ -19,12 +19,15 @@ final class FTPConnectionInfoTests: XCTestCase {
         XCTAssertEqual(url, "ftp://10.0.0.5:6000/update.nsp")
     }
 
-    func testHandlesFilenameWithSpacesAndSpecialChars() {
+    func testURLEncodesFilenameWithSpacesAndBrackets() {
         let info = FTPConnectionInfo(host: "192.168.0.96", port: 5000)
         let url = info.uploadURL(for: "Jump Rope Challenge [0100B9C012706000][v0] (0.07 GB).nsz")
 
         XCTAssertTrue(url.starts(with: "ftp://192.168.0.96:5000/"))
-        XCTAssertTrue(url.contains("Jump"))
+        // Spaces should be %20, brackets should be encoded
+        XCTAssertFalse(url.contains(" "), "Spaces must be URL-encoded")
+        XCTAssertFalse(url.contains("["), "Brackets must be URL-encoded")
+        XCTAssertTrue(url.contains("%20") || url.contains("+"), "Spaces should be percent-encoded")
     }
 
     // MARK: - Default port

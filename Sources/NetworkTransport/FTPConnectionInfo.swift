@@ -10,9 +10,10 @@ public struct FTPConnectionInfo: Sendable, Equatable {
         self.port = port
     }
 
-    /// Constructs the FTP upload URL for a given filename.
+    /// Constructs the FTP upload URL for a given filename (URL-encoded).
     public func uploadURL(for filename: String) -> String {
-        "ftp://\(host):\(port)/\(filename)"
+        let encoded = filename.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? filename
+        return "ftp://\(host):\(port)/\(encoded)"
     }
 
     /// User-friendly display string (e.g., "192.168.0.96:5000").
