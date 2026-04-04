@@ -158,10 +158,10 @@ jobs:
             fi
             echo ""
             echo "### Download"
-            echo "- Use \\`SWizard-${VERSION}-macos-arm64.zip\\`"
+            printf -- '- Use `SWizard-%s-macos-arm64.zip`\n' "$VERSION"
             echo "- Unzip the archive"
             echo "- Install and open from Terminal:"
-            echo "  \\`ditto \"\$HOME/Downloads/SWizard-${VERSION}/SWizard.app\" \"/Applications/SWizard.app\" && xattr -dr com.apple.quarantine \"/Applications/SWizard.app\" && open \"/Applications/SWizard.app\"\\`"
+            printf -- '  `ditto "$HOME/Downloads/SWizard-%s/SWizard.app" "/Applications/SWizard.app" && xattr -dr com.apple.quarantine "/Applications/SWizard.app" && open "/Applications/SWizard.app"`\n' "$VERSION"
             echo ""
             echo "### Notes"
             echo "- This hobby alpha build is unsigned/not notarized"
