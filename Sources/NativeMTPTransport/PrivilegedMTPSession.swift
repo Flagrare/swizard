@@ -425,29 +425,34 @@ public final class PrivilegedMTPSession: @unchecked Sendable {
                 withUnsafeBytes(of: UInt16(0x100D).littleEndian) { dataHeader.append(contentsOf: $0) }
                 withUnsafeBytes(of: objTx.littleEndian) { dataHeader.append(contentsOf: $0) }
 
-                let chunkSize = 262144 // 256KB — matches libmtp
-                let firstChunk = handle.readData(ofLength: chunkSize)
+                // Helper: send data in small chunks via the bulk OUT pipe
+                // IOUSBHost may not handle large single transfers well
+                func sendRawData(_ data: Data) throws {
+                    let pipeChunk = 16384 // 16KB per USB transfer
+                    var offset = 0
+                    while offset < data.count {
+                        let end = min(offset + pipeChunk, data.count)
+                        let slice = data[offset..<end]
+                        let md = NSMutableData(data: Data(slice))
+                        var bw: Int = 0
+                        try outP.__sendIORequest(with: md, bytesTransferred: &bw, completionTimeout: 10.0)
+                        offset += bw
+                    }
+                }
 
-                // Send header + first chunk together
-                var firstPacket = dataHeader
-                firstPacket.append(firstChunk)
-                let firstMD = NSMutableData(data: firstPacket)
-                var firstBW: Int = 0
-                print("LOG:Sending data header + first chunk (\\(firstPacket.count) bytes)...")
-                try outP.__sendIORequest(with: firstMD, bytesTransferred: &firstBW, completionTimeout: 30.0)
-                print("LOG:First packet sent (\\(firstBW) bytes)")
+                // Send data container header (12 bytes)
+                print("LOG:Sending data container header...")
+                try sendRawData(dataHeader)
 
-                // 3. Stream remaining file data (first chunk already sent above)
-                var totalSent: UInt64 = UInt64(firstChunk.count)
-                print("PROGRESS:\\(file.name):\\(totalSent):\\(file.size)")
+                // Stream file data in 256KB read chunks, sent as 16KB USB transfers
+                let readChunkSize = 262144
+                var totalSent: UInt64 = 0
 
                 while totalSent < file.size {
-                    let chunk = handle.readData(ofLength: chunkSize)
+                    let chunk = handle.readData(ofLength: readChunkSize)
                     if chunk.isEmpty { break }
-                    let md = NSMutableData(data: chunk)
-                    var bw: Int = 0
-                    try outP.__sendIORequest(with: md, bytesTransferred: &bw, completionTimeout: 30.0)
-                    totalSent += UInt64(bw)
+                    try sendRawData(chunk)
+                    totalSent += UInt64(chunk.count)
                     print("PROGRESS:\\(file.name):\\(totalSent):\\(file.size)")
                 }
 
