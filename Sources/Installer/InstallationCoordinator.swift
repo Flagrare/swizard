@@ -28,6 +28,7 @@ public final class InstallationCoordinator {
 
     public private(set) var state: State = .idle
     public var transportMode: TransportMode = .mtp
+    public var mtpInstallDestination: MTPInstallDestination?
     public let progress = TransferProgress()
     public private(set) var logs: [LogEntry] = []
 
@@ -194,6 +195,7 @@ public final class InstallationCoordinator {
         do {
             try await mtpSess.install(
                 files: files,
+                targetStorageID: mtpInstallDestination?.storageID,
                 onProgress: { [weak self] fileName, sent, total in
                     Task { @MainActor in
                         if self?.state == .connecting { self?.state = .transferring }

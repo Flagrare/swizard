@@ -5,6 +5,7 @@ import Foundation
 public protocol MTPSessionProtocol: Sendable {
     func install(
         files: [PrivilegedMTPSession.FileToInstall],
+        targetStorageID: UInt32?,
         onProgress: @escaping @Sendable (String, UInt64, UInt64) -> Void,
         onLog: @escaping @Sendable (String) -> Void
     ) async throws

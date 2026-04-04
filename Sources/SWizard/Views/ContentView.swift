@@ -1,5 +1,6 @@
 import SwiftUI
 import Installer
+import NativeMTPTransport
 
 struct ContentView: View {
     @Bindable var appState: AppState
@@ -46,6 +47,11 @@ struct ContentView: View {
 
             if appState.coordinator.transportMode == .mtp {
                 mtpTestSection
+            }
+
+            if appState.coordinator.transportMode == .mtp {
+                mtpAdminWarning
+                mtpDestinationPicker
             }
 
             if appState.showInstallHelp {
@@ -109,6 +115,51 @@ struct ContentView: View {
                         .foregroundStyle(result.contains("SUCCESS") ? .green : result.contains("Testing") ? .secondary : .red)
                 }
             }
+        }
+        .padding(.horizontal)
+        .padding(.vertical, 4)
+    }
+
+    // MARK: - MTP Admin Warning
+
+    private var mtpAdminWarning: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "lock.shield.fill")
+                .foregroundStyle(.orange)
+                .font(.title3)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Admin Password Required")
+                    .font(.subheadline.weight(.bold))
+                    .foregroundStyle(.orange)
+                Text("macOS requires admin privileges to access USB in MTP mode. You'll be prompted for your password when installing.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .padding(10)
+        .background(Color.orange.opacity(0.1))
+        .cornerRadius(8)
+        .padding(.horizontal)
+    }
+
+    // MARK: - MTP Destination Picker
+
+    private var mtpDestinationPicker: some View {
+        HStack {
+            Text("Install to:")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+
+            Picker("", selection: Binding(
+                get: { appState.coordinator.mtpInstallDestination ?? MTPInstallDestination(storageID: 0, rawName: "SD Card install") },
+                set: { appState.coordinator.mtpInstallDestination = $0 }
+            )) {
+                Text("SD Card").tag(MTPInstallDestination(storageID: 0, rawName: "SD Card install"))
+                Text("NAND").tag(MTPInstallDestination(storageID: 0, rawName: "NAND install"))
+            }
+            .pickerStyle(.segmented)
+            .frame(width: 180)
         }
         .padding(.horizontal)
         .padding(.vertical, 4)

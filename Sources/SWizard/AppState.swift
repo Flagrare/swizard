@@ -126,6 +126,7 @@ final class AppState {
             // Install with empty file list — just tests the handshake
             try await session.install(
                 files: [],
+                targetStorageID: nil,
                 onProgress: { _, _, _ in },
                 onLog: { [weak self] msg in
                     Task { @MainActor in self?.logMTP(msg, level: .debug) }

@@ -40,6 +40,7 @@ public final class PrivilegedMTPSession: @unchecked Sendable {
     /// Prompts the user for their admin password once.
     public func install(
         files: [FileToInstall],
+        targetStorageID: UInt32? = nil,
         onProgress: @escaping ProgressHandler,
         onLog: @escaping LogHandler
     ) async throws {
@@ -58,7 +59,7 @@ public final class PrivilegedMTPSession: @unchecked Sendable {
             stagedFiles.append(FileToInstall(path: dest.path, name: file.name, size: file.size))
         }
 
-        let script = Self.buildScript(vendorID: vendorID, productID: productID, files: stagedFiles)
+        let script = Self.buildScript(vendorID: vendorID, productID: productID, files: stagedFiles, targetStorageID: targetStorageID)
 
         onLog("Requesting admin privileges...")
 
@@ -123,7 +124,8 @@ public final class PrivilegedMTPSession: @unchecked Sendable {
     public static func buildScript(
         vendorID: UInt16,
         productID: UInt16,
-        files: [FileToInstall]
+        files: [FileToInstall],
+        targetStorageID: UInt32? = nil
     ) -> String {
         let fileEntries = files.map { file in
             "FileEntry(path: \"\(file.path)\", name: \"\(file.name)\", size: \(file.size))"
@@ -137,6 +139,7 @@ public final class PrivilegedMTPSession: @unchecked Sendable {
 
         let vid = \(vendorID)
         let pid = \(productID)
+        let overrideStorageID: UInt32? = \(targetStorageID.map { "\($0)" } ?? "nil")
 
         struct FileEntry { let path: String; let name: String; let size: UInt64 }
         let files: [FileEntry] = [\(fileEntries.isEmpty ? "" : "\n    \(fileEntries)\n")]
@@ -272,11 +275,16 @@ public final class PrivilegedMTPSession: @unchecked Sendable {
             }
             print("LOG:Found \\(storageIDs.count) storage(s): \\(storageIDs)")
 
-            // Find the install storage by name (not by scanning objects)
-            // DBI exposes storages like "5: SD Card install", "6: NAND install"
-            // The storage ITSELF is the install target — parentHandle = 0xFFFFFFFF (root)
+            // Find the install storage
+            // If user selected a specific destination, use it; otherwise search by name
             var installStorageID: UInt32 = storageIDs.first ?? 0
             var foundInstallStorage = false
+
+            if let override = overrideStorageID, storageIDs.contains(override) {
+                installStorageID = override
+                foundInstallStorage = true
+                print("LOG:Using user-selected storage \\(override)")
+            }
 
             func parseStorageName(storageInfoData: Data) -> String? {
                 let payload = Data(storageInfoData.dropFirst(12))
@@ -295,7 +303,7 @@ public final class PrivilegedMTPSession: @unchecked Sendable {
                 return String(utf16CodeUnits: chars, count: chars.count)
             }
 
-            for sid in storageIDs {
+            for sid in storageIDs where !foundInstallStorage {
                 // GetStorageInfo (0x1005) to get the storage name
                 let sinfoTx = nextTx()
                 try writeContainer(buildCmd(code: 0x1005, tx: sinfoTx, params: [sid]))
