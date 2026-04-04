@@ -4,6 +4,7 @@ import os
 import Installer
 import USBTransport
 import NativeMTPTransport
+import NetworkTransport
 import DBIProtocol
 
 protocol PreferencesStore {
@@ -103,8 +104,8 @@ final class AppState {
                         productID: NintendoSwitchUSB.mtpProductID
                     ) != nil
                 case .network:
-                    // Network mode doesn't need USB detection
-                    found = false
+                    // Network mode: "connected" when user has entered a valid FTP address
+                    found = FTPConnectionInfo.parse(coordinator.ftpAddress) != nil
                 }
 
                 if found != wasConnected {
