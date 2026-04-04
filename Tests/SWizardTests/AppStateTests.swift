@@ -74,6 +74,34 @@ final class AppStateTests: XCTestCase {
         XCTAssertFalse(state.isDeviceConnected)
     }
 
+    func testNetworkModeShowsConnectedWhenFTPAddressEntered() async {
+        let store = InMemoryPreferencesStore()
+        let state = AppState(preferences: store)
+        state.coordinator.transportMode = .network
+        state.coordinator.ftpAddress = "192.168.0.96:5000"
+
+        state.startMonitoring()
+        try? await Task.sleep(for: .seconds(1.5))
+
+        XCTAssertTrue(state.isDeviceConnected,
+                       "Network mode should show connected when valid FTP address is entered")
+        state.stopMonitoring()
+    }
+
+    func testNetworkModeShowsDisconnectedWhenFTPAddressEmpty() async {
+        let store = InMemoryPreferencesStore()
+        let state = AppState(preferences: store)
+        state.coordinator.transportMode = .network
+        state.coordinator.ftpAddress = ""
+
+        state.startMonitoring()
+        try? await Task.sleep(for: .seconds(1.5))
+
+        XCTAssertFalse(state.isDeviceConnected,
+                        "Network mode should show disconnected when FTP address is empty")
+        state.stopMonitoring()
+    }
+
     func testDefaultMTPModeStartsDisconnected() {
         let store = InMemoryPreferencesStore()
         let state = AppState(preferences: store)
