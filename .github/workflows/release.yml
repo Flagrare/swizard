@@ -1,6 +1,10 @@
 name: Release
 
 on:
+  push:
+    tags:
+      - "v*"
+
   workflow_dispatch:
     inputs:
       version:
@@ -25,6 +29,22 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Resolve version
+        run: |
+          if [[ "${{ github.event_name }}" == "push" ]]; then
+            VERSION="$GITHUB_REF_NAME"
+          else
+            VERSION="${{ inputs.version }}"
+          fi
+
+          if [[ -z "$VERSION" ]]; then
+            echo "Unable to determine release version"
+            exit 1
+          fi
+
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+          echo "Resolved version: $VERSION"
+
       - name: Select Xcode
         uses: maxim-lobanov/setup-xcode@v1
         with:
@@ -34,8 +54,6 @@ jobs:
         run: swift --version
 
       - name: Validate version input
-        env:
-          VERSION: ${{ inputs.version }}
         run: |
           if [[ ! "$VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
             echo "Version must match vMAJOR.MINOR.PATCH or prerelease format (example: v1.2.3 or v1.2.3-alpha.1)"
@@ -43,8 +61,7 @@ jobs:
           fi
 
       - name: Ensure tag exists on remote
-        env:
-          VERSION: ${{ inputs.version }}
+        if: github.event_name == 'workflow_dispatch'
         run: |
           if git rev-parse "$VERSION" >/dev/null 2>&1; then
             echo "Tag $VERSION already exists"
@@ -57,8 +74,6 @@ jobs:
         run: brew install libusb
 
       - name: Build and package app bundle
-        env:
-          VERSION: ${{ inputs.version }}
         run: |
           swift build -c release --product SWizard
           BIN_PATH=$(swift build -c release --show-bin-path)
@@ -127,8 +142,6 @@ jobs:
           ditto -c -k --sequesterRsrc --keepParent "$PACKAGE_DIR" "SWizard-${VERSION}-macos-arm64.zip"
 
       - name: Generate release notes
-        env:
-          VERSION: ${{ inputs.version }}
         run: |
           cat > RELEASE_NOTES.md <<EOF
           ## SWizard ${VERSION}
@@ -152,11 +165,23 @@ jobs:
           EOF
 
       - name: Publish GitHub release
+        if: github.event_name == 'workflow_dispatch'
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ inputs.version }}
-          name: SWizard ${{ inputs.version }}
+          tag_name: ${{ env.VERSION }}
+          name: SWizard ${{ env.VERSION }}
           body_path: RELEASE_NOTES.md
-          prerelease: ${{ contains(inputs.version, '-') }}
+          prerelease: ${{ contains(env.VERSION, '-') }}
           make_latest: ${{ inputs.make_latest }}
-          files: SWizard-${{ inputs.version }}-macos-arm64.zip
+          files: SWizard-${{ env.VERSION }}-macos-arm64.zip
+
+      - name: Publish GitHub release (tag push)
+        if: github.event_name == 'push'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ env.VERSION }}
+          name: SWizard ${{ env.VERSION }}
+          body_path: RELEASE_NOTES.md
+          prerelease: ${{ contains(env.VERSION, '-') }}
+          make_latest: ${{ contains(env.VERSION, '-') && 'false' || 'true' }}
+          files: SWizard-${{ env.VERSION }}-macos-arm64.zip
