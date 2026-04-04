@@ -72,8 +72,8 @@ public final class PrivilegedMTPSession: @unchecked Sendable {
         let binaryFile = tempDir.appendingPathComponent("mtp_install")
         try cSource.write(to: sourceFile, atomically: true, encoding: .utf8)
 
-        // Compile: cc -o binary source.c -I/opt/homebrew/include -L/opt/homebrew/lib -lmtp
-        let compileCmd = "cc -o \\\"\(binaryFile.path)\\\" \\\"\(sourceFile.path)\\\" -I/opt/homebrew/include -L/opt/homebrew/lib -lmtp 2>&1 && \\\"\(binaryFile.path)\\\" 2>&1"
+        // Compile with both libmtp and libusb
+        let compileCmd = "cc -o \\\"\(binaryFile.path)\\\" \\\"\(sourceFile.path)\\\" -I/opt/homebrew/include -L/opt/homebrew/lib -lmtp -lusb-1.0 2>&1 && \\\"\(binaryFile.path)\\\" 2>&1"
         let osascript = "do shell script \"\(compileCmd)\" with administrator privileges"
 
         let process = Process()
@@ -163,6 +163,7 @@ public final class PrivilegedMTPSession: @unchecked Sendable {
         #include <stdio.h>
         #include <stdlib.h>
         #include <string.h>
+        #include <libusb-1.0/libusb.h>
         #include <libmtp.h>
 
         typedef struct { const char *path; const char *name; uint64_t size; } FileEntry;
@@ -175,27 +176,40 @@ public final class PrivilegedMTPSession: @unchecked Sendable {
             \(storageOverride)
             int has_override = \(hasOverride);
 
+            // Step 1: Use libusb to detach kernel driver (requires root)
+            libusb_context *usb_ctx;
+            libusb_init(&usb_ctx);
+            libusb_device_handle *usb_handle = libusb_open_device_with_vid_pid(usb_ctx, 0x057E, 0x201D);
+            if (usb_handle) {
+                libusb_set_auto_detach_kernel_driver(usb_handle, 1);
+                int dr = libusb_detach_kernel_driver(usb_handle, 0);
+                printf("LOG:Kernel driver detach: %d\\n", dr); fflush(stdout);
+                // Release but keep auto-detach — kernel driver stays detached briefly
+                libusb_close(usb_handle);
+            }
+            libusb_exit(usb_ctx);
+            printf("LOG:Kernel driver released\\n"); fflush(stdout);
+
+            // Step 2: Now use libmtp while kernel driver is still detached
             LIBMTP_Init();
             printf("LOG:libmtp initialized\\n"); fflush(stdout);
 
-            // Detect devices
             LIBMTP_raw_device_t *rawdevs = NULL;
             int numdevs = 0;
             LIBMTP_error_number_t err = LIBMTP_Detect_Raw_Devices(&rawdevs, &numdevs);
             if (err != LIBMTP_ERROR_NONE || numdevs == 0) {
-                printf("ERROR:No MTP devices found\\n");
+                printf("ERROR:No MTP devices found after driver detach\\n");
                 return 1;
             }
             printf("LOG:Found %d MTP device(s)\\n", numdevs); fflush(stdout);
 
-            // Open first device
             LIBMTP_mtpdevice_t *device = LIBMTP_Open_Raw_Device_Uncached(&rawdevs[0]);
             free(rawdevs);
             if (!device) {
                 printf("ERROR:Failed to open MTP device\\n");
                 return 1;
             }
-            printf("LOG:Device opened\\n"); fflush(stdout);
+            printf("LOG:Device opened via libmtp\\n"); fflush(stdout);
 
             // Find install storage
             LIBMTP_Get_Storage(device, LIBMTP_STORAGE_SORTBY_NOTSORTED);
