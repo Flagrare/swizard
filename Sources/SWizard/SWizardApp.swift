@@ -17,6 +17,6 @@ struct SWizardApp: App {
             ContentView(appState: appState)
         }
         .windowResizability(.contentSize)
-        .defaultSize(width: 700, height: 480)
+        .defaultSize(width: 900, height: 600)
     }
 }

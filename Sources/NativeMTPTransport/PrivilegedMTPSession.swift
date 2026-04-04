@@ -418,9 +418,9 @@ public final class PrivilegedMTPSession: @unchecked Sendable {
                 var headerBW: Int = 0
                 try outP.__sendIORequest(with: headerMD, bytesTransferred: &headerBW, completionTimeout: 10.0)
 
-                // 3. Stream file data in chunks (raw, no container headers)
-                let chunkSize = 512 * 1024 // 512KB chunks for reliability
-                var totalSent: UInt64 = 0
+                // 3. Stream remaining file data (first chunk already sent above)
+                var totalSent: UInt64 = UInt64(firstChunk.count)
+                print("PROGRESS:\\(file.name):\\(totalSent):\\(file.size)")
 
                 while totalSent < file.size {
                     let chunk = handle.readData(ofLength: chunkSize)
