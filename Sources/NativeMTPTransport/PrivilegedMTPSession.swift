@@ -43,7 +43,22 @@ public final class PrivilegedMTPSession: @unchecked Sendable {
         onProgress: @escaping ProgressHandler,
         onLog: @escaping LogHandler
     ) async throws {
-        let script = Self.buildScript(vendorID: vendorID, productID: productID, files: files)
+        // Copy files to /tmp so the privileged (root) process can access them.
+        // macOS TCC blocks root from reading user directories.
+        let stagingDir = FileManager.default.temporaryDirectory.appendingPathComponent("swizard_install_\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: stagingDir, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: stagingDir) }
+
+        var stagedFiles: [FileToInstall] = []
+        for file in files {
+            let source = URL(fileURLWithPath: file.path)
+            let dest = stagingDir.appendingPathComponent(file.name)
+            onLog("Staging \(file.name) for privileged transfer...")
+            try FileManager.default.copyItem(at: source, to: dest)
+            stagedFiles.append(FileToInstall(path: dest.path, name: file.name, size: file.size))
+        }
+
+        let script = Self.buildScript(vendorID: vendorID, productID: productID, files: stagedFiles)
 
         onLog("Requesting admin privileges...")
 

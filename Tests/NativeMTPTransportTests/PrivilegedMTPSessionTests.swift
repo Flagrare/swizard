@@ -84,6 +84,26 @@ final class PrivilegedMTPSessionTests: XCTestCase {
         XCTAssertFalse(script.contains(".map"))
     }
 
+    func testScriptUsesAbsolutePathsFromStaging() {
+        // When files are staged to /tmp, the script should use /tmp paths (not user dir)
+        let stagedFiles = [
+            PrivilegedMTPSession.FileToInstall(
+                path: "/tmp/swizard_install_test/game.nsp",
+                name: "game.nsp",
+                size: 1000
+            )
+        ]
+
+        let script = PrivilegedMTPSession.buildScript(
+            vendorID: NintendoSwitchUSB.vendorID,
+            productID: NintendoSwitchUSB.mtpProductID,
+            files: stagedFiles
+        )
+
+        XCTAssertTrue(script.contains("/tmp/swizard_install_test/game.nsp"))
+        XCTAssertFalse(script.contains("/Users/"))
+    }
+
     func testScriptIncludesVIDPID() {
         let script = PrivilegedMTPSession.buildScript(
             vendorID: 0x057E,
