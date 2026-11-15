@@ -72,6 +72,16 @@ public final class TransferProgress: @unchecked Sendable {
         ) ?? .zero
     }
 
+    /// Keeps the queued files but starts every one from 0% (used when retrying).
+    public func resetProgress() {
+        for index in files.indices {
+            files[index].transferredBytes = 0
+        }
+        currentFileName = nil
+        speedCalculator = nil
+        overallStats = .zero
+    }
+
     public func clear() {
         files.removeAll()
         currentFileName = nil

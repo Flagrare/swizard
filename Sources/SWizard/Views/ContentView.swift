@@ -5,16 +5,6 @@ import NativeMTPTransport
 struct ContentView: View {
     @Bindable var appState: AppState
 
-    /// USB modes require a connected device; Network mode doesn't.
-    private var installRequiresDevice: Bool {
-        switch appState.coordinator.transportMode {
-        case .dbiBackend, .mtp:
-            return !appState.isDeviceConnected
-        case .network:
-            return false
-        }
-    }
-
     var body: some View {
         HSplitView {
             leftPanel
@@ -76,7 +66,7 @@ struct ContentView: View {
 
             Divider()
 
-            bottomBar
+            InstallBottomBar(appState: appState)
                 .padding()
         }
     }
@@ -279,37 +269,5 @@ struct ContentView: View {
 
             LogView(entries: appState.coordinator.logs)
         }
-    }
-
-    // MARK: - Bottom Bar
-
-    private var bottomBar: some View {
-        HStack {
-            installButton
-
-            Spacer()
-
-            Text(appState.appVersionDisplay)
-                .font(.caption2)
-                .foregroundStyle(.secondary)
-
-            if !appState.coordinator.progress.files.isEmpty {
-                Button("Clear Queue") {
-                    appState.coordinator.reset()
-                }
-                .buttonStyle(.plain)
-                .foregroundStyle(.secondary)
-            }
-        }
-    }
-
-    private var installButton: some View {
-        InstallButtonView(
-            state: appState.coordinator.state,
-            progress: appState.coordinator.progress,
-            isDisabled: appState.coordinator.progress.files.isEmpty || installRequiresDevice,
-            onInstall: { appState.coordinator.startInstallation() },
-            onCancel: { appState.coordinator.cancel() }
-        )
     }
 }

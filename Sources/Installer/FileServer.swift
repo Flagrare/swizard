@@ -14,6 +14,10 @@ public final class FileServer: FileServing, @unchecked Sendable {
         }
     }
 
+    public func removeAll() {
+        files.removeAll()
+    }
+
     public func fileList() -> String {
         let names = files.keys.sorted()
         guard !names.isEmpty else { return "" }

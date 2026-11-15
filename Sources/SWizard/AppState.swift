@@ -28,7 +28,7 @@ final class AppState {
     private static let lastFTPAddressKey = "swizard.ftp.lastAddress"
     private static let lastTransportModeKey = "swizard.transportMode"
 
-    let coordinator = InstallationCoordinator()
+    let coordinator: InstallationCoordinator
     let deviceMonitor: USBDeviceMonitor
     var isDeviceConnected = false
     var showInstallHelp: Bool
@@ -44,9 +44,11 @@ final class AppState {
     init(
         preferences: PreferencesStore = UserDefaults.standard,
         appVersionProvider: any AppVersionProviding = DefaultAppVersionProvider(),
-        diagnosticsExportRunner: (any DiagnosticsExportRunning)? = nil
+        diagnosticsExportRunner: (any DiagnosticsExportRunning)? = nil,
+        coordinator: InstallationCoordinator? = nil
     ) {
         let flag = _isTransferActive
+        self.coordinator = coordinator ?? InstallationCoordinator()
         self.preferences = preferences
         self.appVersionProvider = appVersionProvider
         if let diagnosticsExportRunner {
@@ -62,21 +64,25 @@ final class AppState {
 
         // Restore last FTP address
         if let lastAddress = preferences.string(forKey: Self.lastFTPAddressKey) {
-            coordinator.ftpAddress = lastAddress
+            self.coordinator.ftpAddress = lastAddress
         }
 
         // Restore last transport mode
         if let savedMode = preferences.string(forKey: Self.lastTransportModeKey),
            let mode = InstallationCoordinator.TransportMode.allCases.first(where: { $0.rawValue == savedMode }) {
-            coordinator.transportMode = mode
+            self.coordinator.transportMode = mode
         }
     }
 
     var isTransferActive: Bool {
         switch coordinator.state {
-        case .transferring, .reconnecting: return true
+        case .waitingForSwitch, .transferring, .reconnecting: return true
         default: return false
         }
+    }
+
+    var canClearQueue: Bool {
+        !coordinator.progress.files.isEmpty && !coordinator.state.isBusy
     }
 
     var appVersionDisplay: String {
@@ -287,6 +293,7 @@ private extension InstallationCoordinator.State {
         case .idle: "idle"
         case .connecting: "connecting"
         case .connected: "connected"
+        case .waitingForSwitch: "waitingForSwitch"
         case .transferring: "transferring"
         case .reconnecting(let attempt): "reconnecting(\(attempt))"
         case .complete: "complete"

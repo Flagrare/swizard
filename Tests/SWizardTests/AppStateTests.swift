@@ -325,7 +325,7 @@ private final class MockMTPSessionForAppState: MTPSessionProtocol, @unchecked Se
     }
 }
 
-private final class InMemoryPreferencesStore: PreferencesStore {
+final class InMemoryPreferencesStore: PreferencesStore {
     private var boolValues: [String: Bool] = [:]
     private var stringValues: [String: String] = [:]
 

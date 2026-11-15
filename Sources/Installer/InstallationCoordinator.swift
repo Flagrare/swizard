@@ -14,10 +14,20 @@ public final class InstallationCoordinator {
         case idle
         case connecting
         case connected
+        /// DBI session is open but the Switch hasn't requested data yet (user picking a game).
+        case waitingForSwitch
         case transferring
         case reconnecting(attempt: Int)
         case complete
         case error(String)
+
+        /// True while an install is in flight and the queue must not change under it.
+        public var isBusy: Bool {
+            switch self {
+            case .connecting, .connected, .waitingForSwitch, .transferring, .reconnecting: true
+            case .idle, .complete, .error: false
+            }
+        }
     }
 
     public enum TransportMode: String, Sendable, CaseIterable {
@@ -64,17 +74,44 @@ public final class InstallationCoordinator {
     }
 
     public func queueFiles(_ urls: [URL]) {
-        queuedURLs.append(contentsOf: urls)
-        fileServer.register(files: urls)
-        for url in urls {
-            let size = (try? FileManager.default.attributesOfItem(atPath: url.path)[.size] as? UInt64) ?? 0
-            progress.register(name: url.lastPathComponent, totalBytes: size)
+        if state == .complete {
+            removeAllQueued()
+            state = .idle
         }
-        log("Queued \(urls.count) file(s)")
+
+        var added: [URL] = []
+        for url in urls {
+            let name = url.lastPathComponent
+            // FileServer keys by name, so a second file with the same name can't be served.
+            guard !queuedURLs.contains(where: { $0.lastPathComponent == name }) else {
+                log("Skipped \(name): already queued", level: .warning)
+                continue
+            }
+            let size = (try? FileManager.default.attributesOfItem(atPath: url.path)[.size] as? UInt64) ?? 0
+            queuedURLs.append(url)
+            fileServer.register(files: [url])
+            progress.register(name: name, totalBytes: size)
+            added.append(url)
+        }
+
+        if !added.isEmpty {
+            log("Queued \(added.count) file(s)")
+        }
+    }
+
+    /// Empties the queue but keeps the Activity Log for diagnostics.
+    public func clearQueue() {
+        guard !state.isBusy else { return }
+        removeAllQueued()
+        state = .idle
     }
 
     public func startInstallation() {
-        guard case .idle = state else { return }
+        switch state {
+        case .idle: break
+        case .error: progress.resetProgress()
+        default: return
+        }
         guard fileServer.fileCount > 0 else {
             log("No files queued")
             return
@@ -85,7 +122,9 @@ public final class InstallationCoordinator {
         }
         sessionDelegateAdapter.onFileChunk = { [weak self] fileName, bytesInChunk, _ in
             Task { @MainActor in
-                self?.progress.applyChunk(fileName: fileName, bytesInChunk: bytesInChunk)
+                guard let self else { return }
+                if self.state == .waitingForSwitch { self.state = .transferring }
+                self.progress.applyChunk(fileName: fileName, bytesInChunk: bytesInChunk)
             }
         }
 
@@ -106,10 +145,16 @@ public final class InstallationCoordinator {
         cancel()
         // FTP client uses curl Process which is killed when task is cancelled
         state = .idle
-        progress.clear()
+        removeAllQueued()
         logs.removeAll()
-        queuedURLs.removeAll()
         networkInfo = nil
+    }
+
+    /// The queue lives in three places (URLs, progress rows, file server); change them together.
+    private func removeAllQueued() {
+        queuedURLs.removeAll()
+        progress.clear()
+        fileServer.removeAll()
     }
 
     // MARK: - Private
@@ -157,7 +202,7 @@ public final class InstallationCoordinator {
 
         while true {
             do {
-                state = .transferring
+                state = .waitingForSwitch
                 try await session.run(transport: transport, fileServer: fileServer)
                 return
             } catch let error as USBError where error == .disconnected {

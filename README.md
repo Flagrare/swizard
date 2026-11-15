@@ -47,6 +47,7 @@ macOS Tahoe on Apple Silicon breaks MTP connections, making OpenMTP and Android 
 - **SD Card / NAND picker** — choose install destination in MTP mode
 - **USB retry + stall recovery** — automatic retry on transient USB errors
 - **Session reconnect** — DBI Backend mode recovers from cable disconnects
+- **Retry without losing context** — failed installs offer Retry with the queue and Activity Log intact; duplicate drops are skipped; DBI shows when it's waiting for you to pick a game on the Switch
 - **Structured logging** — debug/info/warning/error levels with color-coding and filtering
 - **Copy logs** — clipboard button for easy debugging
 - **Persistent settings** — remembers transport mode and FTP address
@@ -54,7 +55,7 @@ macOS Tahoe on Apple Silicon breaks MTP connections, making OpenMTP and Android 
 
 ## Architecture
 
-Built with SOLID principles, TDD (283 tests), and clean design patterns:
+Built with SOLID principles, TDD (292 tests), and clean design patterns:
 
 ```
 ┌─────────────────────────────────────────────┐
@@ -166,7 +167,7 @@ Replace `<version>` with the release version (example: `v0.1.0-alpha`).
 - **MTP not detecting Switch**: Ensure DBI is in "Run MTP responder" mode. SWizard will ask for admin password — this is required to claim USB from macOS
 - **DBI Backend not connecting**: Confirm DBI shows "Run DBI backend", not MTP
 - **FTP failing**: Ensure Switch and Mac are on the same WiFi network. Try the IP shown on the Switch screen
-- **Transfer interrupted**: In DBI Backend mode, SWizard auto-reconnects. In MTP/FTP mode, restart the transfer
+- **Transfer interrupted**: In DBI Backend mode, SWizard auto-reconnects. If an install still fails, press **Retry**: the queue and Activity Log are kept (MTP/FTP resend every queued file)
 - **macOS security blocking launch**: Run `xattr -dr com.apple.quarantine /Applications/SWizard.app`
 - **First-time network permission**: macOS asks once to allow network access — click Allow
 

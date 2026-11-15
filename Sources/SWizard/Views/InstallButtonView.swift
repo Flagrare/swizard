@@ -1,10 +1,9 @@
 import SwiftUI
 import Installer
 
-/// Displays the appropriate install/progress/cancel/complete/error UI based on coordinator state.
+/// The primary install control for the current coordinator state (Install / Cancel / Retry).
 struct InstallButtonView: View {
     let state: InstallationCoordinator.State
-    let progress: TransferProgress
     let isDisabled: Bool
     let onInstall: () -> Void
     let onCancel: () -> Void
@@ -17,24 +16,27 @@ struct InstallButtonView: View {
                 .disabled(isDisabled)
 
         case .connecting:
-            HStack(spacing: 8) {
-                ProgressView().controlSize(.small)
-                Text("Connecting...")
-            }
+            busy("Connecting...")
 
         case .connected:
+            busy("Connected, waiting...")
+
+        case .waitingForSwitch:
             HStack(spacing: 8) {
-                ProgressView().controlSize(.small)
-                Text("Connected, waiting...")
+                busy("Choose the game on your Switch")
+                cancelButton
             }
 
         case .transferring:
-            transferringView
+            HStack(spacing: 8) {
+                Text("Installing...")
+                    .foregroundStyle(.secondary)
+                cancelButton
+            }
 
         case .reconnecting(let attempt):
             HStack(spacing: 8) {
-                ProgressView().controlSize(.small)
-                Text("Reconnecting (\(attempt))...")
+                busy("Reconnecting (\(attempt))...")
                     .foregroundStyle(.orange)
                 cancelButton
             }
@@ -43,35 +45,18 @@ struct InstallButtonView: View {
             Label("Complete!", systemImage: "checkmark.circle.fill")
                 .foregroundStyle(.green)
 
-        case .error(let message):
-            Label(message, systemImage: "exclamationmark.triangle.fill")
-                .foregroundStyle(.red)
-                .font(.caption)
-                .lineLimit(1)
+        case .error:
+            Button("Retry", action: onInstall)
+                .buttonStyle(.borderedProminent)
+                .disabled(isDisabled)
         }
     }
 
-    private var transferringView: some View {
-        let stats = progress.overallStats
-        return HStack(spacing: 8) {
-            ProgressView(value: progress.overallFraction)
-                .frame(width: 80)
-            Text("\(Int(progress.overallFraction * 100))%")
-                .font(.system(.caption, design: .monospaced))
-
-            if stats.bytesPerSecond > 0 {
-                Text(stats.formattedSpeed)
-                    .font(.system(.caption, design: .monospaced))
-                    .foregroundStyle(.secondary)
-            }
-
-            if let eta = stats.formattedETA {
-                Text(eta)
-                    .font(.system(.caption, design: .monospaced))
-                    .foregroundStyle(.secondary)
-            }
-
-            cancelButton
+    private func busy(_ text: String) -> some View {
+        HStack(spacing: 8) {
+            ProgressView().controlSize(.small)
+            Text(text)
+                .lineLimit(2)
         }
     }
 
@@ -79,5 +64,6 @@ struct InstallButtonView: View {
         Button("Cancel", action: onCancel)
             .buttonStyle(.plain)
             .foregroundStyle(.red)
+            .fixedSize()
     }
 }
