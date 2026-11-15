@@ -24,6 +24,21 @@ private final class FailingConnectTransport: TransportProtocol, @unchecked Senda
     func write(_ data: Data) async throws {}
 }
 
+/// Switch sits idle (user browsing DBI's list) for a few USB timeouts, then sends EXIT.
+private final class SlowToChooseTransport: TransportProtocol, @unchecked Sendable {
+    private var idleReadsRemaining = 4
+    func connect() async throws {}
+    func disconnect() async throws {}
+    func read(maxLength: Int) async throws -> Data {
+        if idleReadsRemaining > 0 {
+            idleReadsRemaining -= 1
+            throw USBError.timeout
+        }
+        return DBIHeader(commandType: .request, commandID: .exit, dataSize: 0).encoded()
+    }
+    func write(_ data: Data) async throws {}
+}
+
 // MARK: - Tests
 
 final class InstallationCoordinatorTests: XCTestCase {
@@ -87,6 +102,21 @@ final class InstallationCoordinatorTests: XCTestCase {
         if case .error = coordinator.state { } else {
             XCTFail("Expected .error, got \(coordinator.state)")
         }
+        cleanup(url)
+    }
+
+    @MainActor
+    func testDBIBackendModeToleratesSwitchIdleWhileUserChoosesFiles() async {
+        let coordinator = InstallationCoordinator(transport: SlowToChooseTransport())
+        coordinator.transportMode = .dbiBackend
+
+        let url = try! createTempFile(name: "dbi_idle.nsp", content: Data(repeating: 0, count: 10))
+        coordinator.queueFiles([url])
+        coordinator.startInstallation()
+
+        try? await Task.sleep(for: .seconds(0.5))
+
+        XCTAssertEqual(coordinator.state, .complete)
         cleanup(url)
     }
 

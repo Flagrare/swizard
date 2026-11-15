@@ -54,7 +54,7 @@ macOS Tahoe on Apple Silicon breaks MTP connections, making OpenMTP and Android 
 
 ## Architecture
 
-Built with SOLID principles, TDD (277 tests), and clean design patterns:
+Built with SOLID principles, TDD (283 tests), and clean design patterns:
 
 ```
 ┌─────────────────────────────────────────────┐
@@ -152,6 +152,7 @@ Replace `<version>` with the release version (example: `v0.1.0-alpha`).
 3. Launch SWizard → select **DBI Backend** mode
 4. Wait for connection status to turn green
 5. Drop files and click **Install**
+6. On the Switch, pick the files from DBI's list. SWizard waits as long as you need
 
 ### Network (FTP) Mode
 1. On the Switch, open DBI → **Start FTP** → **Install on SD Card**

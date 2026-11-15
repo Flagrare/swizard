@@ -1,6 +1,7 @@
 import Foundation
+import DBIProtocol
 
-public enum USBError: LocalizedError, Equatable {
+public enum USBError: LocalizedError, Equatable, TransportError {
     case deviceNotFound
     case initializationFailed(Int32)
     case claimFailed(Int32)
@@ -32,6 +33,8 @@ public enum USBError: LocalizedError, Equatable {
             return false
         }
     }
+
+    public var isTimeout: Bool { self == .timeout }
 
     /// Whether this error indicates an endpoint stall requiring libusb_clear_halt.
     public var requiresStallRecovery: Bool {

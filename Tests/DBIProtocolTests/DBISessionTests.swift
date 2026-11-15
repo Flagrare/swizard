@@ -177,6 +177,79 @@ final class DBISessionTests: XCTestCase {
         XCTAssertEqual(commandEvent?.level, .debug)
     }
 
+    // MARK: - Idle Switch (user still browsing / Switch busy between commands)
+
+    func testSessionKeepsWaitingWhileSwitchIsIdleBetweenCommands() async throws {
+        let transport = MockTransport()
+        let fileServer = MockFileServer()
+        let delegate = MockSessionDelegate()
+        fileServer.register(name: "game.nsp", content: Data(repeating: 0x00, count: 16))
+
+        transport.queueReadHeader(DBIHeader(commandType: .request, commandID: .list, dataSize: 0))
+        transport.queueReadHeader(DBIHeader(commandType: .ack, commandID: .list, dataSize: 0))
+        // User takes a while to pick a file on the Switch
+        transport.queueReadTimeouts(5)
+        transport.queueReadHeader(DBIHeader(commandType: .request, commandID: .exit, dataSize: 0))
+
+        let session = DBISession()
+        session.delegate = delegate
+        try await session.run(transport: transport, fileServer: fileServer)
+
+        XCTAssertTrue(delegate.exitReceived)
+    }
+
+    func testSessionLogsWaitingOnceWhileSwitchIsIdle() async throws {
+        let transport = MockTransport()
+        let fileServer = MockFileServer()
+        let delegate = MockSessionDelegate()
+
+        transport.queueReadTimeouts(3)
+        transport.queueReadHeader(DBIHeader(commandType: .request, commandID: .exit, dataSize: 0))
+
+        let session = DBISession()
+        session.delegate = delegate
+        try await session.run(transport: transport, fileServer: fileServer)
+
+        let waitingLogs = delegate.logEvents.filter { $0.message.contains("Waiting for Switch") }
+        XCTAssertEqual(waitingLogs.count, 1)
+        XCTAssertEqual(waitingLogs.first?.level, .info)
+    }
+
+    func testTimeoutInsideACommandStillFails() async throws {
+        let transport = MockTransport()
+        let fileServer = MockFileServer()
+
+        // LIST request arrives, but the Switch never ACKs our response
+        transport.queueReadHeader(DBIHeader(commandType: .request, commandID: .list, dataSize: 0))
+        transport.queueReadTimeouts(1)
+
+        let session = DBISession()
+        do {
+            try await session.run(transport: transport, fileServer: fileServer)
+            XCTFail("Should have thrown")
+        } catch is MockTimeoutError {
+            // expected: mid-command timeouts are real failures
+        }
+    }
+
+    func testCancellingWhileSwitchIsIdleEndsSession() async throws {
+        let transport = MockTransport()
+        transport.idleForeverWhenExhausted = true
+        let fileServer = MockFileServer()
+        let session = DBISession()
+
+        let task = Task { try await session.run(transport: transport, fileServer: fileServer) }
+        try await Task.sleep(for: .milliseconds(50))
+        task.cancel()
+
+        do {
+            try await task.value
+            XCTFail("Should have thrown")
+        } catch is CancellationError {
+            // expected
+        }
+    }
+
     func testSessionThrowsOnUnknownCommand() async throws {
         let transport = MockTransport()
         let fileServer = MockFileServer()

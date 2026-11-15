@@ -25,7 +25,7 @@ public final class DBISession: @unchecked Sendable {
         delegate?.sessionDidLog("DBI session started", level: .info)
 
         while true {
-            let headerData = try await transport.read(maxLength: DBIConstants.headerSize)
+            let headerData = try await awaitNextHeader(from: transport)
             let header = try DBIHeader(from: headerData)
 
             delegate?.sessionDidLog("Received \(header.commandID) (\(header.commandType))", level: .debug)
@@ -45,6 +45,27 @@ public final class DBISession: @unchecked Sendable {
                 delegate?.sessionDidReceiveExit()
                 delegate?.sessionDidLog("DBI session ended", level: .info)
                 break
+            }
+        }
+    }
+
+    // MARK: - Private
+
+    /// The Switch drives the conversation, so silence between commands is normal
+    /// (user browsing DBI's file list, NSZ decompression, NAND writes).
+    /// Only this idle wait tolerates timeouts; timeouts inside a handler still fail.
+    private func awaitNextHeader(from transport: any TransportProtocol) async throws -> Data {
+        var hasLoggedWaiting = false
+
+        while true {
+            try Task.checkCancellation()
+            do {
+                return try await transport.read(maxLength: DBIConstants.headerSize)
+            } catch let error as any TransportError where error.isTimeout {
+                if !hasLoggedWaiting {
+                    delegate?.sessionDidLog("Waiting for Switch…", level: .info)
+                    hasLoggedWaiting = true
+                }
             }
         }
     }
